@@ -29,6 +29,14 @@ $ curl -XPOST localhost:5000/pc/validate -d '{
   "publiccodeYmlVersion": "0.2"
 }'
 ```
+## Docker support
+
+This project can be packaged and executed using Docker as follow:
+
+```sh
+$ docker build -t pc-web-validator .
+$ docker run -p5000:5000 --name pc-web-validator -it --rm pc-web-validator
+```
 
 
 ## Contributing
