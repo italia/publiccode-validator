@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -11,7 +10,6 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/gorilla/mux"
 	publiccode "github.com/italia/publiccode-parser-go"
-	yamlv2 "gopkg.in/yaml.v2"
 )
 
 //Enc encoder struct which includes essential datatypes
@@ -31,8 +29,7 @@ func main() {
 	//init router
 	router := mux.NewRouter()
 
-	router.HandleFunc("/pc/validate", pcPayLoad).Methods("POST", "OPTIONS")
-	router.HandleFunc("/pc/y2j", y2j).Methods("POST")
+	router.HandleFunc("/pc/validate", validate).Methods("POST", "OPTIONS")
 
 	log.Printf("server is starting at port %s", port)
 	log.Fatal(http.ListenAndServe(":"+port, router))
@@ -53,17 +50,17 @@ func parse(b []byte) ([]byte, error, error) {
 	return pc, errParse, err
 }
 
-func pcPayLoad(w http.ResponseWriter, r *http.Request) {
-	log.Print("called pcPayload()")
+func validate(w http.ResponseWriter, r *http.Request) {
+	log.Print("called validate()")
 	setupResponse(&w, r)
 	if (*r).Method == "OPTIONS" {
 		return
 	}
-	w.Header().Set("Content-type", "application/json")
-	// w.Header().Set("Content-type", "text/yaml")
 
+	//Closing body after operations
+	defer r.Body.Close()
+	//reading request
 	body, err := ioutil.ReadAll(r.Body)
-	log.Print(string(body))
 	if err != nil {
 		log.Printf("Error reading body: %v", err)
 		mess := Message{Status: string(http.StatusBadRequest), Message: "can't read body"}
@@ -71,17 +68,29 @@ func pcPayLoad(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(mess)
 	}
 
-	m, err := yaml.JSONToYAML(body)
-	if err != nil {
-		fmt.Printf("Conversion to json ko:\n%v\n", err)
-		mess := Message{Status: string(http.StatusBadRequest), Message: "Conversion to json ko"}
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(mess)
+	// these functions take as argument a request body
+	// convert content in YAML format if needed
+	// and return a bytes array needed from Parser
+	// to validate correctly
+	// here, based on content-type header must convert
+	// [yaml/json] content into []byte
+	var m []byte
+	if r.Header.Get("Content-Type") == "application/json" {
+		//converting to YML
+		m, err = yaml.JSONToYAML(body)
+		if err != nil {
+			log.Printf("Conversion to json ko:\n%v\n", err)
+			mess := Message{Status: string(http.StatusBadRequest), Message: "Conversion to json ko"}
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(mess)
+		}
+		log.Print("CT json")
+	} else {
+		m = body
+		log.Print("CT yaml: ", string(m), err)
 	}
-	// y := d.json2yaml()
-	// b := y.yaml2bytes()
 
-	// log.Print(y)
+	//parsing
 	var pc []byte
 	var errParse, errConverting error
 	pc, errParse, errConverting = parse(m)
@@ -94,7 +103,16 @@ func pcPayLoad(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		json.NewEncoder(w).Encode(errParse)
 	} else {
-		w.Write(yaml2json(pc))
+		//set response CT based on client accept header
+		//and return respectively content
+		if r.Header.Get("Accept") == "application/json" {
+			w.Header().Set("Content-type", "application/json")
+			w.Write(yaml2json(pc))
+			return
+		}
+		//default choice
+		w.Header().Set("Content-type", "text/yaml")
+		w.Write(pc)
 	}
 }
 
@@ -102,17 +120,6 @@ func yaml2json(y []byte) []byte {
 	r, err := yaml.YAMLToJSON(y)
 	if err != nil {
 		fmt.Printf("Conversion to json ko:\n%v\n", err)
-	}
-	return r
-}
-
-func (d *Enc) yaml2json() []byte {
-	log.Print(d.PublicCode)
-	m, err := yaml.Marshal(d.PublicCode)
-	r, err := yaml.YAMLToJSON(m)
-	if err != nil {
-		fmt.Printf("Conversion to json ko:\n%v\n", err)
-		// return
 	}
 	return r
 }
@@ -133,19 +140,4 @@ func (d *Enc) json2yaml() []byte {
 		// return
 	}
 	return r
-}
-
-func (d *Enc) yaml2bytes() []byte {
-	reqBodyBytes := new(bytes.Buffer)
-	json.NewEncoder(reqBodyBytes).Encode(d)
-	return reqBodyBytes.Bytes()
-}
-
-func y2j(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-type", "application/json")
-	var d Enc
-	yamlv2.NewDecoder(r.Body).Decode(&d.PublicCode)
-	y := d.yaml2json()
-	w.Write(y)
-	// json.NewEncoder(w).Encode(string(y))
 }
