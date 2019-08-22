@@ -17,11 +17,6 @@ import (
 	publiccode "github.com/italia/publiccode-parser-go"
 )
 
-//Enc encoder struct which includes essential datatypes
-type Enc struct {
-	PublicCode publiccode.PublicCode
-}
-
 //Message json type mapping, for test purpose
 type Message struct {
 	Status     string                `json:"status"`
@@ -65,9 +60,6 @@ func getURLFromYMLBuffer(in []byte) *url.URL {
 // getRawURL returns a valid raw root repository based on
 // major code hosting platforms
 func getRawURL(url *url.URL) string {
-	log.Printf("repo url: %s", url)
-	// url = vcsurl.GetRawFile(url)
-	log.Printf("repo url: %s", url)
 	return vcsurl.GetRawRoot(url).String()
 }
 
@@ -121,10 +113,8 @@ func validate(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(mess)
 		}
-		log.Print("CT json", string(m))
 	} else {
 		m = body
-		log.Print("CT yaml: ", string(m), err)
 	}
 
 	//parsing
@@ -158,25 +148,6 @@ func yaml2json(y []byte) []byte {
 	r, err := yaml.YAMLToJSON(y)
 	if err != nil {
 		log.Printf("Conversion to json ko:\n%v\n", err)
-	}
-	return r
-}
-
-// json2yaml json to yaml conversion
-func (d *Enc) json2yaml() []byte {
-	log.Print(d.PublicCode)
-	m, err := yaml.Marshal(d.PublicCode)
-	// log.Print(string(m))
-	if err != nil {
-		log.Printf("Marshall to yaml ko:\n%v\n", err)
-		// return
-	}
-
-	r, err := yaml.JSONToYAML(m)
-	// log.Print(string(r))
-	if err != nil {
-		log.Printf("Conversion to yaml ko:\n%v\n", err)
-		// return
 	}
 	return r
 }
