@@ -92,6 +92,7 @@ func validate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("Error reading body: %v", err)
 		mess := Message{Status: string(http.StatusBadRequest), Message: "can't read body"}
+		w.Header().Set("Content-type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(mess)
 	}
@@ -110,6 +111,7 @@ func validate(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("Conversion to json ko:\n%v\n", err)
 			mess := Message{Status: string(http.StatusBadRequest), Message: "Conversion to json ko"}
+			w.Header().Set("Content-type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(mess)
 		}
@@ -127,6 +129,7 @@ func validate(w http.ResponseWriter, r *http.Request) {
 	}
 	if errParse != nil {
 		log.Printf("Error parsing: %v", errParse)
+		w.Header().Set("Content-type", "application/json")
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		json.NewEncoder(w).Encode(errParse)
 	} else {
