@@ -11,10 +11,10 @@ import (
 
 	yamlv2 "gopkg.in/yaml.v2"
 
-	vcsurl "github.com/alranel/go-vcsurl"
 	"github.com/ghodss/yaml"
 	"github.com/gorilla/mux"
 	publiccode "github.com/italia/publiccode-parser-go"
+	vcsurl "github.com/sebbalex/go-vcsurl"
 )
 
 //Message json type mapping, for test purpose
@@ -51,10 +51,11 @@ func getURLFromYMLBuffer(in []byte) *url.URL {
 	yamlv2.NewDecoder(bytes.NewReader(in)).Decode(&s)
 	urlString := fmt.Sprintf("%v", s["url"])
 	url, err := url.Parse(urlString)
-	if err != nil {
-		log.Printf("mapping to url ko:\n%v\n", err)
+	if err == nil && url.Scheme != "" && url.Host != "" {
+		return url
 	}
-	return url
+	log.Printf("mapping to url ko:\n%v\n", err)
+	return nil
 }
 
 // getRawURL returns a valid raw root repository based on
@@ -67,8 +68,11 @@ func getRawURL(url *url.URL) string {
 func parse(b []byte) ([]byte, error, error) {
 	url := getURLFromYMLBuffer(b)
 	p := publiccode.NewParser()
-	p.DisableNetwork = false
-	p.RemoteBaseURL = getRawURL(url)
+	p.DisableNetwork = true
+	if url != nil {
+		p.DisableNetwork = false
+		p.RemoteBaseURL = getRawURL(url)
+	}
 	log.Printf("parse() called with disableNetwork: %v, and remoteBaseUrl: %s", p.DisableNetwork, p.RemoteBaseURL)
 	errParse := p.Parse(b)
 	pc, err := p.ToYAML()
