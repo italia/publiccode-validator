@@ -61,7 +61,10 @@ func getURLFromYMLBuffer(in []byte) *url.URL {
 // getRawURL returns a valid raw root repository based on
 // major code hosting platforms
 func getRawURL(url *url.URL) string {
-	return vcsurl.GetRawRoot(url).String()
+	if vcsurl.GetRawRoot(url) != nil {
+		return vcsurl.GetRawRoot(url).String()
+	}
+	return ""
 }
 
 // parse returns new parsed and validated buffer and errors if any
