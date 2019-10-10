@@ -36,15 +36,25 @@ type App struct {
 // main server start
 func main() {
 	app := App{}
+	app.init()
+	app.Run()
+}
+
+func (app *App) init() {
 	app.Port = "5000"
 	app.DisableNetwork = false
+	app.Router = mux.NewRouter()
 	app.initializeRouters()
+}
+
+// Run http server
+func (app *App) Run() {
+	log.Printf("server is starting at port %s", app.Port)
+	log.Fatal(http.ListenAndServe(":"+app.Port, app.Router))
 }
 
 func (app *App) initializeRouters() {
 	//init router
-	app.Router = mux.NewRouter()
-
 	app.Router.
 		HandleFunc("/pc/validate", app.validateParam).
 		Methods("POST", "OPTIONS").
@@ -53,10 +63,6 @@ func (app *App) initializeRouters() {
 	app.Router.
 		HandleFunc("/pc/validate", app.validate).
 		Methods("POST", "OPTIONS")
-
-	log.Printf("server is starting at port %s", app.Port)
-	log.Fatal(http.ListenAndServe(":"+app.Port, app.Router))
-
 }
 
 // setupResponse set CORS header
