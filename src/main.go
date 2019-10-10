@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	yamlv2 "gopkg.in/yaml.v2"
 
@@ -24,16 +25,38 @@ type Message struct {
 	Publiccode publiccode.PublicCode `json:"pc"`
 }
 
+// App application main settings and export for tests
+type App struct {
+	Router         *mux.Router
+	Port           string
+	Debug          bool
+	DisableNetwork bool
+}
+
 // main server start
 func main() {
-	port := "5000"
+	app := App{}
+	app.Port = "5000"
+	app.DisableNetwork = false
+	app.initializeRouters()
+}
+
+func (app *App) initializeRouters() {
 	//init router
-	router := mux.NewRouter()
+	app.Router = mux.NewRouter()
 
-	router.HandleFunc("/pc/validate", validate).Methods("POST", "OPTIONS")
+	app.Router.
+		HandleFunc("/pc/validate", app.validateParam).
+		Methods("POST", "OPTIONS").
+		Queries("disableNetwork", "{disableNetwork}")
 
-	log.Printf("server is starting at port %s", port)
-	log.Fatal(http.ListenAndServe(":"+port, router))
+	app.Router.
+		HandleFunc("/pc/validate", app.validate).
+		Methods("POST", "OPTIONS")
+
+	log.Printf("server is starting at port %s", app.Port)
+	log.Fatal(http.ListenAndServe(":"+app.Port, app.Router))
+
 }
 
 // setupResponse set CORS header
@@ -61,31 +84,58 @@ func getURLFromYMLBuffer(in []byte) *url.URL {
 // getRawURL returns a valid raw root repository based on
 // major code hosting platforms
 func getRawURL(url *url.URL) string {
-	if vcsurl.GetRawRoot(url) != nil {
-		return vcsurl.GetRawRoot(url).String()
+	rawURL := vcsurl.GetRawRoot(url)
+	if rawURL != nil {
+		return rawURL.String()
 	}
 	return ""
 }
 
 // parse returns new parsed and validated buffer and errors if any
-func parse(b []byte) ([]byte, error, error) {
+func (app *App) parse(b []byte) ([]byte, error, error) {
 	url := getURLFromYMLBuffer(b)
 	p := publiccode.NewParser()
-	p.DisableNetwork = true
+	p.DisableNetwork = app.DisableNetwork
+
 	if url != nil {
-		p.DisableNetwork = false
+		p.DisableNetwork = app.DisableNetwork
 		p.RemoteBaseURL = getRawURL(url)
 	}
 	log.Printf("parse() called with disableNetwork: %v, and remoteBaseUrl: %s", p.DisableNetwork, p.RemoteBaseURL)
 	errParse := p.Parse(b)
 	pc, err := p.ToYAML()
+
+	// hack to reset global vars to default values
+	app.DisableNetwork = false
 	return pc, errParse, err
+}
+
+// validateParam will take a query parameter to enable
+// or disable network layer on parsing process
+// and then call normal validation
+func (app *App) validateParam(w http.ResponseWriter, r *http.Request) {
+	log.Print("called validateParam()")
+	setupResponse(&w, r)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
+	// Getting vars from parameters
+	vars := mux.Vars(r)
+	disableNetwork, err := strconv.ParseBool(vars["disableNetwork"])
+	app.DisableNetwork = disableNetwork
+
+	if err != nil {
+		app.DisableNetwork = false
+		log.Printf("var disableNetwork not set, default to true")
+	}
+
+	app.validate(w, r)
 }
 
 // validate returns a YML or JSON onbject validated and upgraded
 // to latest PublicCode version specs.
 // It accepts both format as input YML|JSON
-func validate(w http.ResponseWriter, r *http.Request) {
+func (app *App) validate(w http.ResponseWriter, r *http.Request) {
 	log.Print("called validate()")
 	setupResponse(&w, r)
 	if (*r).Method == "OPTIONS" {
@@ -129,7 +179,7 @@ func validate(w http.ResponseWriter, r *http.Request) {
 	//parsing
 	var pc []byte
 	var errParse, errConverting error
-	pc, errParse, errConverting = parse(m)
+	pc, errParse, errConverting = app.parse(m)
 
 	if errConverting != nil {
 		log.Printf("Error converting: %v", errConverting)
@@ -148,7 +198,7 @@ func validate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		//default choice
-		w.Header().Set("Content-type", "text/yaml")
+		w.Header().Set("Content-type", "application/x-yaml")
 		w.Write(pc)
 	}
 }
