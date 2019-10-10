@@ -148,6 +148,10 @@ func (app *App) validate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.Body == nil {
+		return
+	}
+
 	//Closing body after operations
 	defer r.Body.Close()
 	//reading request
