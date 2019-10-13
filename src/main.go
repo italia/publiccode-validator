@@ -195,10 +195,13 @@ func (app *App) validate(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error converting: %v", errConverting)
 	}
 	if errParse != nil {
-		log.Printf("Error parsing: %v", errParse)
+		// log.Printf("Error parsing: %v", errParse)
 		w.Header().Set("Content-type", "application/json")
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		json.NewEncoder(w).Encode(errParse)
+
+		json, _ := json.Marshal(errParse)
+		w.Write(json)
+		// json.NewEncoder(w).Encode(errParse)
 	} else {
 		//set response CT based on client accept header
 		//and return respectively content
