@@ -4,6 +4,8 @@ github.com/alranel/go-spdx v0.0.5 h1:dpWfqUWDd3IEf9KTjWu++ZiC3pKws+77lk+/qXjgir8
 github.com/alranel/go-spdx v0.0.5/go.mod h1:lcAlhyAoH9rjd33PkIx+2gsCIYwDpL4H0WX7Jrays70=
 github.com/alranel/go-vcsurl v0.0.0-20190819164520-88a614c7acb4 h1:a+SmZVgzBVoCfNK1LPRyy/rXDn8JiA/8SpMwcaBRRO0=
 github.com/alranel/go-vcsurl v0.0.0-20190819164520-88a614c7acb4/go.mod h1:tp+e312yiwgu8H4/Ly26J8MevK9lz7BucU4PPlEv0ag=
+github.com/alranel/go-vcsurl v0.0.0-20190918163743-e14328dc728a h1:rC0zhGHCi9ejH0KDdQDN/mXlSauNJKzmjxhpKLIQya0=
+github.com/alranel/go-vcsurl v0.0.0-20190918163743-e14328dc728a/go.mod h1:tp+e312yiwgu8H4/Ly26J8MevK9lz7BucU4PPlEv0ag=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -21,6 +23,8 @@ github.com/gorilla/mux v1.7.3 h1:gnP5JzjVOuiZD07fKKToCAOjS0yOpj/qPETTXCCS6hw=
 github.com/gorilla/mux v1.7.3/go.mod h1:1lud6UwP+6orDFRuTfBEV8e9/aOM/c4fVVCaMa2zaAs=
 github.com/italia/publiccode-parser-go v0.0.0-20190819165358-31bf64802d87 h1:7KH+erTBwZAvxnwuSHMmNQSyppY1Ol77hOYYQuhKqCw=
 github.com/italia/publiccode-parser-go v0.0.0-20190819165358-31bf64802d87/go.mod h1:q18a0jHIXgRVNJ12lI5mBHnVlhqLcUdQ2a3888PhTqY=
+github.com/italia/publiccode-parser-go v0.0.0-20191010210128-7f178b8a5093 h1:Nkf/XxHhR/DE9qmvsOzjr6SJXpsQy+KtaBbnPxjKyz4=
+github.com/italia/publiccode-parser-go v0.0.0-20191010210128-7f178b8a5093/go.mod h1:q18a0jHIXgRVNJ12lI5mBHnVlhqLcUdQ2a3888PhTqY=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/sebbalex/go-vcsurl v0.0.0-20190821183029-e2c014ec6077 h1:G6sZr8RQ9Sfph8umeO+K4Z63lI0VkE/6e320pZExppQ=
@@ -56,3 +60,5 @@ gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8
 gopkg.in/yaml.v2 v2.2.2/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 gopkg.in/yaml.v2 v2.2.3 h1:fvjTMHxHEw/mxHbtzPi3JCcKXQRAnQTBRo6YCJSVHKI=
 gopkg.in/yaml.v2 v2.2.3/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
+gopkg.in/yaml.v2 v2.2.4 h1:/eiJrUcujPVeJ3xlSWaiNi3uSVmDGBK1pDHUHAnao1I=
+gopkg.in/yaml.v2 v2.2.4/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
