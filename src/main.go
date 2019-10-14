@@ -45,7 +45,7 @@ func (app *App) init() {
 	app.Port = "5000"
 	app.DisableNetwork = false
 	app.Router = mux.NewRouter()
-	app.initLogger()
+	// app.initLogger()
 	app.initializeRouters()
 }
 
