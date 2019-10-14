@@ -63,11 +63,11 @@ func TestValidationErrWithNoNetwork(t *testing.T) {
 	var errs []ErrorInvalidValue   //[]map[string]interface{}
 	var errOut []ErrorInvalidValue //[]map[string]interface{}
 
-	fileYML, err := os.Open("../tests/missing_maintenance_contacts.yml")
+	fileYML, err := os.Open("../tests/invalid.yml")
 	if err != nil {
 		log.Fatal(err)
 	}
-	out, err := ioutil.ReadFile("../tests/invalid_out.log")
+	out, err := ioutil.ReadFile("../tests/out_invalid.json")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -93,7 +93,7 @@ func TestValidationWithNoNetwork(t *testing.T) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		out, err := ioutil.ReadFile("../tests/valid.minimal.out.yml")
+		out, err := ioutil.ReadFile("../tests/out_valid.minimal.yml")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -109,7 +109,7 @@ func TestValidationWithNetwork(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	out, err := ioutil.ReadFile("../tests/valid.minimal.out.yml")
+	out, err := ioutil.ReadFile("../tests/out_valid.minimal.yml")
 	if err != nil {
 		log.Fatal(err)
 	}

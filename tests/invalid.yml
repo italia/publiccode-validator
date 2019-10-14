@@ -8,8 +8,8 @@ landingURL: "https://developers.italia.it"
 isBasedOn: "https://github.com/italia/developers.italia.it.git"   # The original repository, "Otello"
 softwareVersion: "1.0"                                        # Last stable version
 releaseDate: 2017-04-15                     # Date of last stable software release
-logo: assets/icons/logo-it.png
-# monochromeLogo: assets/icons/dt-logo.svg
+logo: tests/img/logo.png
+monochromeLogo: tests/img/logo-mono.svg
 
 inputTypes:
   - text/plain
@@ -34,6 +34,10 @@ developmentStatus: development
 softwareType: "standalone"
 
 intendedAudience:
+  onlyFor:
+    - cities
+    - health-services
+    - it-ag-agricolo
   countries:
     - it
     - de
@@ -68,8 +72,9 @@ description:
        - Has zero bugs
        - Solves all the problems of the world
     screenshots:
-       - assets/images/home-logo-docs.png
-       - assets/images/home-logo-forum.png
+       - tests/img/sshot1.png
+       - tests/img/sshot2.png
+       - tests/img/sshot3.png
     videos:                             # Demo videos of the software
        - https://www.youtube.com/watch?v=RaHmGbBOP84
     awards:
@@ -82,10 +87,10 @@ legal:
   license: AGPL-3.0-or-later        # SPDX expression of license
   mainCopyrightOwner: City of Chicago
   repoOwner: City of Chicago
-  authorsFile: AUTHORS              # file listing copyright information
+  authorsFile: tests/AUTHORS              # file listing copyright information
 
 maintenance:
-  type: "community"
+  type: "internal"
 
 localisation:
   # Does the software support, at least by design, multiple languages?
@@ -117,19 +122,26 @@ dependsOn:             # List of dependencies. The only mandatory list is the pr
 
 # IT: Italian extension.
 it:
-  countryExtensionVersion: "0.2"
   conforme:
-    lineeGuidaDesign: false
-    modelloInteroperabilita: false
-    misureMinimeSicurezza: false
-    gdpr: false
+    accessibile: yes
+    interoperabile: yes
+    sicuro: yes
+    privacy: yes
 
   riuso:
     # Codice IPA della PA che ha pubblicato questo repo (repo-owner)
     codiceIPA: c_h501
 
-  piattaforme:
-    spid: false
-    pagopa: false
-    cie: false
-    anpr: false
+  spid: yes
+  pagopa: yes
+  cie: yes
+  anpr: yes
+  ecosistemi:
+    - scuola
+
+
+  designKit:
+    seo: no
+    ui: yes
+    web: yes
+    content: no
