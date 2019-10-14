@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 
 	yamlv2 "gopkg.in/yaml.v2"
@@ -44,7 +45,18 @@ func (app *App) init() {
 	app.Port = "5000"
 	app.DisableNetwork = false
 	app.Router = mux.NewRouter()
+	app.initLogger()
 	app.initializeRouters()
+}
+
+func (app *App) initLogger() {
+	f, err := os.OpenFile("app.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// defer f.Close()
+	log.SetOutput(f)
+	log.Println("Application logging started")
 }
 
 // Run http server
