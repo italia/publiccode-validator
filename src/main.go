@@ -16,7 +16,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/gorilla/mux"
 	publiccode "github.com/italia/publiccode-parser-go"
-	vcsurl "github.com/sebbalex/go-vcsurl"
+	vcsurl "github.com/alranel/go-vcsurl"
 )
 
 //Message json type mapping, for test purpose

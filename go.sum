@@ -11,9 +11,12 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/deadcheat/goblet v1.3.1 h1:OPOYQjHlbPmG8fFCt8GNNGECLVhaJ0n7F7cP5Mh7G/A=
 github.com/deadcheat/goblet v1.3.1/go.mod h1:IrMNyAwyrVgB30HsND2WgleTUM4wHTS9m40yNY6NJQg=
+github.com/deadcheat/gonch v0.0.0-20180528124129-c2ff7a019863 h1:WiIagMEsLYiZCeD76SSLTJPdBdnmXkrFOFbI6Chf0xg=
 github.com/deadcheat/gonch v0.0.0-20180528124129-c2ff7a019863/go.mod h1:/5mH3gAuXUxGN3maOBAxBfB8RXvP9tBIX5fx2x1k0V0=
 github.com/dyatlov/go-oembed v0.0.0-20180429203341-4bc5ab7a42e9 h1:cdw1dgA549x0tZR5zM5bjobQXFFShOsozUbzWZgmd30=
 github.com/dyatlov/go-oembed v0.0.0-20180429203341-4bc5ab7a42e9/go.mod h1:3XylPVY2YGcV9RQBie0DspVncA1nsgsYQ8BtIs52fz4=
+github.com/dyatlov/go-oembed v0.0.0-20191018083617-475682269b4c h1:0B3ir49BfmASr/MXci0VWY1aagmjXYHdeO/ZztSllQU=
+github.com/dyatlov/go-oembed v0.0.0-20191018083617-475682269b4c/go.mod h1:DjlDZiZGRRKbiJZmiEiiXozsBQAQzHmxwHKFeXifL2g=
 github.com/ghodss/yaml v1.0.0 h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/go-bindata/go-bindata v3.1.2+incompatible/go.mod h1:xK8Dsgwmeed+BBsSy2XTopBn/8uK2HWuGSnA11C3Joo=
@@ -25,6 +28,8 @@ github.com/italia/publiccode-parser-go v0.0.0-20190819165358-31bf64802d87 h1:7KH
 github.com/italia/publiccode-parser-go v0.0.0-20190819165358-31bf64802d87/go.mod h1:q18a0jHIXgRVNJ12lI5mBHnVlhqLcUdQ2a3888PhTqY=
 github.com/italia/publiccode-parser-go v0.0.0-20191010210128-7f178b8a5093 h1:Nkf/XxHhR/DE9qmvsOzjr6SJXpsQy+KtaBbnPxjKyz4=
 github.com/italia/publiccode-parser-go v0.0.0-20191010210128-7f178b8a5093/go.mod h1:q18a0jHIXgRVNJ12lI5mBHnVlhqLcUdQ2a3888PhTqY=
+github.com/italia/publiccode-parser-go v0.0.0-20191028193426-165ad614cbc3 h1:MuB1sy0dOIU0lzj+HiSJPg4wWr20P0Z/UHFEZ8R8uc0=
+github.com/italia/publiccode-parser-go v0.0.0-20191028193426-165ad614cbc3/go.mod h1:q18a0jHIXgRVNJ12lI5mBHnVlhqLcUdQ2a3888PhTqY=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
@@ -38,6 +43,8 @@ github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+
 github.com/stretchr/objx v0.2.0/go.mod h1:qt09Ya8vawLte6SNmTgCsAVtYtaKzEcn8ATUoHMkEqE=
 github.com/stretchr/testify v1.3.0 h1:TivCn/peBQ7UY8ooIcPgZFpTNSz0Q2U6UrFlUfqbe0Q=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
+github.com/stretchr/testify v1.4.0 h1:2E4SXV/wtOkTonXsotYi4li6zVWxYlZuYNCXe9XRJyk=
+github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/thoas/go-funk v0.4.0 h1:KBaa5NL7NMtsFlQaD8nQMbDt1wuM+OOaNQyYNYQFhVo=
 github.com/thoas/go-funk v0.4.0/go.mod h1:mlR+dHGb+4YgXkf13rkQTuzrneeHANxOm6+ZnEV9HsA=
 github.com/urfave/cli v1.20.0/go.mod h1:70zkFmudgCuE/ngEzBv17Jvp/497gISqfk5gWijbERA=
@@ -63,6 +70,8 @@ golang.org/x/tools v0.0.0-20190724185037-8aa4eac1a7c1/go.mod h1:jcCCGcm9btYwXyDq
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 h1:qIbj1fsPNlZgppZ+VLlY7N33q108Sa+fhmuc+sWQYwY=
 gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 h1:YR8cESwS4TdDjEe65xsg0ogRM/Nc3DYOhEAlW+xobZo=
+gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/yaml.v2 v2.2.2/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 gopkg.in/yaml.v2 v2.2.3 h1:fvjTMHxHEw/mxHbtzPi3JCcKXQRAnQTBRo6YCJSVHKI=
 gopkg.in/yaml.v2 v2.2.3/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
