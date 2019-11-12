@@ -1,0 +1,337 @@
+openapi: 3.0.1
+info:
+  title: PC WEB VALIDATOR
+  description: This is a Go web interface validator for publiccode.yml files, it uses
+    publiccode-parser-go. `publiccode.yml` is an international standard for describing
+    public software. It is expected to be published in the root of open source repositories.
+    This parser performs syntactic and semantic validation according to the official
+    spec.
+  termsOfService: https://github.com/sebbalex/pc-web-validator
+  contact:
+    email: contatti@developers.italia.it
+  license:
+    name: BSD 3-Clause
+    url: https://github.com/sebbalex/pc-web-validator/blob/master/LICENSE
+  version: 0.0.2
+externalDocs:
+  description: Find out more about Developers Italia
+  url: https://developers.italia.it
+servers:
+- url: https://publiccode-editor-test.developers.italia.it/
+tags:
+- name: validate
+  description: Everything about Developers Italia
+  externalDocs:
+    description: Find out more
+    url: https://developers.italia.it
+paths:
+  /validate:
+    post:
+      tags:
+      - validate
+      summary: Validate a PublicCode
+      operationId: validate
+      requestBody:
+        description: Publiccode object that needs to be validated
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicCode'
+          text/yaml:
+            schema:
+              $ref: '#/components/schemas/PublicCode'
+        required: true
+      responses:
+        200:
+          description: |-
+            Validation Ok, return latest valid publiccode version
+          content: 
+            application/json:
+              schema:
+                $ref: 'https://raw.githubusercontent.com/italia/publiccode-editor/master/src/app/yaml_validation_schema.json'
+        422:
+          description: Validation failed
+          content: 
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ValidationError'
+components:
+  schemas:
+    ValidationError:
+      properties:
+        Key:
+          type: string
+        Reason:
+          type: string
+      required:
+        - Key
+        - Reason
+    PublicCode:
+      required:
+      - name
+      type: object
+      properties:
+        categories:
+          title: The Categories Schema
+          type: array
+          items:
+            title: The Items Schema
+            pattern: ^(.*)$
+            type: string
+            example: ""
+            default: ""
+        description:
+          title: The Description Schema
+          required:
+          - en
+          type: object
+          properties:
+            en:
+              title: The En Schema
+              required:
+              - features
+              - genericName
+              - localisedName
+              - longDescription
+              - shortDescription
+              type: object
+              properties:
+                longDescription:
+                  title: The Longdescription Schema
+                  pattern: ^(.*)$
+                  type: string
+                  example: ""
+                  default: ""
+                features:
+                  title: The Features Schema
+                  type: array
+                  items:
+                    title: The Items Schema
+                    pattern: ^(.*)$
+                    type: string
+                    example: ""
+                    default: ""
+                genericName:
+                  title: The Genericname Schema
+                  pattern: ^(.*)$
+                  type: string
+                  example: ""
+                  default: ""
+                localisedName:
+                  title: The Localisedname Schema
+                  pattern: ^(.*)$
+                  type: string
+                  example: ""
+                  default: ""
+                shortDescription:
+                  title: The Shortdescription Schema
+                  pattern: ^(.*)$
+                  type: string
+                  example: ""
+                  default: ""
+        developmentStatus:
+          title: The Developmentstatus Schema
+          pattern: ^(.*)$
+          type: string
+          example: ""
+          default: ""
+        inputTypes:
+          title: The Inputtypes Schema
+          type: array
+          items:
+            title: The Items Schema
+            pattern: ^(.*)$
+            type: string
+            example: ""
+            default: ""
+        intendedAudience:
+          title: The Intendedaudience Schema
+          type: object
+          properties: {}
+        it:
+          title: The It Schema
+          required:
+          - conforme
+          - countryExtensionVersion
+          - piattaforme
+          - riuso
+          type: object
+          properties:
+            conforme:
+              title: The Conforme Schema
+              required:
+              - gdpr
+              - lineeGuidaDesign
+              - misureMinimeSicurezza
+              - modelloInteroperabilita
+              type: object
+              properties:
+                misureMinimeSicurezza:
+                  title: The Misureminimesicurezza Schema
+                  type: boolean
+                  default: false
+                modelloInteroperabilita:
+                  title: The Modellointeroperabilita Schema
+                  type: boolean
+                  default: false
+                lineeGuidaDesign:
+                  title: The Lineeguidadesign Schema
+                  type: boolean
+                  default: false
+                gdpr:
+                  title: The Gdpr Schema
+                  type: boolean
+                  default: false
+            piattaforme:
+              title: The Piattaforme Schema
+              required:
+              - anpr
+              - cie
+              - pagopa
+              - spid
+              type: object
+              properties:
+                anpr:
+                  title: The Anpr Schema
+                  type: boolean
+                  default: false
+                pagopa:
+                  title: The Pagopa Schema
+                  type: boolean
+                  default: false
+                spid:
+                  title: The Spid Schema
+                  type: boolean
+                  default: false
+                cie:
+                  title: The Cie Schema
+                  type: boolean
+                  default: false
+            countryExtensionVersion:
+              title: The Countryextensionversion Schema
+              pattern: ^(.*)$
+              type: string
+              example: ""
+              default: ""
+            riuso:
+              title: The Riuso Schema
+              type: object
+              properties: {}
+        legal:
+          title: The Legal Schema
+          required:
+          - license
+          type: object
+          properties:
+            license:
+              title: The License Schema
+              pattern: ^(.*)$
+              type: string
+              example: ""
+              default: ""
+        localisation:
+          title: The Localisation Schema
+          required:
+          - availableLanguages
+          - localisationReady
+          type: object
+          properties:
+            availableLanguages:
+              title: The Availablelanguages Schema
+              type: array
+              items:
+                title: The Items Schema
+                pattern: ^(.*)$
+                type: string
+                example: ""
+                default: ""
+            localisationReady:
+              title: The Localisationready Schema
+              type: boolean
+              default: false
+        maintenance:
+          title: The Maintenance Schema
+          required:
+          - contacts
+          - type
+          type: object
+          properties:
+            type:
+              title: The Type Schema
+              pattern: ^(.*)$
+              type: string
+              example: ""
+              default: ""
+            contacts:
+              title: The Contacts Schema
+              type: array
+              items:
+                title: The Items Schema
+                required:
+                - name
+                type: object
+                properties:
+                  name:
+                    title: The Name Schema
+                    pattern: ^(.*)$
+                    type: string
+                    example: ""
+                    default: ""
+        name:
+          title: The Name Schema
+          pattern: ^(.*)$
+          type: string
+          example: ""
+          default: ""
+        outputTypes:
+          title: The Outputtypes Schema
+          type: array
+          items:
+            title: The Items Schema
+            pattern: ^(.*)$
+            type: string
+            example: ""
+            default: ""
+        platforms:
+          title: The Platforms Schema
+          type: array
+          items:
+            title: The Items Schema
+            pattern: ^(.*)$
+            type: string
+            example: ""
+            default: ""
+        publiccodeYmlVersion:
+          title: The Publiccodeymlversion Schema
+          pattern: ^(.*)$
+          type: string
+          example: ""
+          default: ""
+        releaseDate:
+          title: The Releasedate Schema
+          pattern: ^(.*)$
+          type: string
+          example: ""
+          default: ""
+        softwareType:
+          title: The Softwaretype Schema
+          pattern: ^(.*)$
+          type: string
+          example: ""
+          default: ""
+        softwareVersion:
+          title: The Softwareversion Schema
+          pattern: ^(.*)$
+          type: string
+          example: ""
+          default: ""
+        url:
+          title: The Url Schema
+          pattern: ^(.*)$
+          type: string
+          example: ""
+          default: ""
+      xml:
+        name: PublicCode
