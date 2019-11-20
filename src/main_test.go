@@ -119,6 +119,21 @@ func TestValidationWithNetwork(t *testing.T) {
 	assert.Equal(t, string(out), response.Body.String())
 }
 
+func TestValidationRemoteURL(t *testing.T) {
+	out, err := ioutil.ReadFile("../tests/out_valid.minimal.yml")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	urlString := "https://raw.githubusercontent.com/italia/pc-web-validator/master/tests/valid.minimal.yml"
+	// invalid
+	// urlString := "https://raw.githubusercontent.com/italia/pc-web-validator/master/tests/invalid.yml"
+	req, _ := http.NewRequest("POST", "/pc/validateURL?url="+urlString, nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+	assert.Equal(t, string(out), response.Body.String())
+}
+
 // Utility functions to make mock request and check response
 func executeRequest(req *http.Request) *httptest.ResponseRecorder {
 	rr := httptest.NewRecorder()
