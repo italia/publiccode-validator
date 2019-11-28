@@ -59,7 +59,7 @@ func TestValidationZeroPayload(t *testing.T) {
 	}
 }
 
-func TestValidationErrWithNoNetwork(t *testing.T) {
+func TestValidationErrWithNetwork(t *testing.T) {
 	var errs []ErrorInvalidValue   //[]map[string]interface{}
 	var errOut []ErrorInvalidValue //[]map[string]interface{}
 
@@ -141,6 +141,7 @@ func executeRequest(req *http.Request) *httptest.ResponseRecorder {
 
 	return rr
 }
+
 func checkResponseCode(t *testing.T, expected, actual int) {
 	if expected != actual {
 		t.Errorf("Expected response code %d. Got %d\n", expected, actual)

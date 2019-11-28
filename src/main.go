@@ -21,9 +21,10 @@ import (
 
 //Message json type mapping, for test purpose
 type Message struct {
-	Status     string                `json:"status"`
+	Status     int                   `json:"status"`
 	Message    string                `json:"message"`
 	Publiccode publiccode.PublicCode `json:"pc"`
+	Error      string                `json:"error"`
 }
 
 // App application main settings and export for tests
@@ -142,6 +143,21 @@ func (app *App) parseRemoteURL(urlString string) ([]byte, error, error) {
 	return pc, errParse, err
 }
 
+func promptError(err error, w http.ResponseWriter,
+	httpStatus int, mess string) {
+
+	log.Errorf("Error parsing: %v", err)
+
+	message := Message{
+		Status:  httpStatus,
+		Message: mess,
+		Error:   err.Error(),
+	}
+	w.Header().Set("Content-type", "application/json")
+	w.WriteHeader(message.Status)
+	json.NewEncoder(w).Encode(message)
+}
+
 func (app *App) validateRemoteURL(w http.ResponseWriter, r *http.Request) {
 	log.Info("called validateFromURL()")
 	setupResponse(&w, r)
@@ -159,15 +175,10 @@ func (app *App) validateRemoteURL(w http.ResponseWriter, r *http.Request) {
 	pc, errParse, errConverting := app.parseRemoteURL(urlString)
 
 	if errConverting != nil {
-		log.Errorf("Error converting: %v", errConverting)
+		promptError(errConverting, w, http.StatusBadRequest, "Error converting")
 	}
 	if errParse != nil {
-		log.Errorf("Error parsing: %v", errParse)
-		w.Header().Set("Content-type", "application/json")
-		w.WriteHeader(http.StatusUnprocessableEntity)
-
-		json, _ := json.Marshal(errParse)
-		w.Write(json)
+		promptError(errParse, w, http.StatusUnprocessableEntity, "Error parsing")
 	} else {
 		//set response CT based on client accept header
 		//and return respectively content
@@ -215,6 +226,7 @@ func (app *App) validate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Body == nil {
+		log.Info("empty payload")
 		return
 	}
 
@@ -223,11 +235,7 @@ func (app *App) validate(w http.ResponseWriter, r *http.Request) {
 	//reading request
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Errorf("Error reading body: %v", err)
-		mess := Message{Status: string(http.StatusBadRequest), Message: "can't read body"}
-		w.Header().Set("Content-type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(mess)
+		promptError(err, w, http.StatusBadRequest, "Error reading body")
 	}
 
 	// these functions take as argument a request body
@@ -242,11 +250,7 @@ func (app *App) validate(w http.ResponseWriter, r *http.Request) {
 		//converting to YML
 		m, err = yaml.JSONToYAML(body)
 		if err != nil {
-			log.Errorf("Conversion to json ko:\n%v\n", err)
-			mess := Message{Status: string(http.StatusBadRequest), Message: "Conversion to json ko"}
-			w.Header().Set("Content-type", "application/json")
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(mess)
+			promptError(err, w, http.StatusBadRequest, "Conversion to json ko")
 		}
 	} else {
 		m = body
@@ -258,15 +262,17 @@ func (app *App) validate(w http.ResponseWriter, r *http.Request) {
 	pc, errParse, errConverting = app.parse(m)
 
 	if errConverting != nil {
-		log.Errorf("Error converting: %v", errConverting)
+		promptError(errConverting, w, http.StatusBadRequest, "Error converting")
 	}
 	if errParse != nil {
-		log.Errorf("Error parsing: %v", errParse)
+		// log.Printf("Error parsing: %v", errParse)
+		// consider switch to promptError()
 		w.Header().Set("Content-type", "application/json")
 		w.WriteHeader(http.StatusUnprocessableEntity)
 
 		json, _ := json.Marshal(errParse)
 		w.Write(json)
+		// promptError(errParse, w, http.StatusUnprocessableEntity, "Error parsing")
 	} else {
 		//set response CT based on client accept header
 		//and return respectively content
