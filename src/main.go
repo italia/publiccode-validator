@@ -3,12 +3,15 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strconv"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	yamlv2 "gopkg.in/yaml.v2"
@@ -21,10 +24,11 @@ import (
 
 //Message json type mapping, for test purpose
 type Message struct {
-	Status     int                   `json:"status"`
-	Message    string                `json:"message"`
-	Publiccode publiccode.PublicCode `json:"pc"`
-	Error      string                `json:"error"`
+	Status          int                    `json:"status"`
+	Message         string                 `json:"message"`
+	Publiccode      *publiccode.PublicCode `json:"pc,omitempty"`
+	Error           string                 `json:"error,omitempty"`
+	ValidationError []ErrorInvalidValue    `json:"validationErrors,omitempty"`
 }
 
 // App application main settings and export for tests
@@ -146,16 +150,44 @@ func (app *App) parseRemoteURL(urlString string) ([]byte, error, error) {
 func promptError(err error, w http.ResponseWriter,
 	httpStatus int, mess string) {
 
-	log.Errorf("Error parsing: %v", err)
+	log.Errorf(mess+": %v", err)
 
 	message := Message{
 		Status:  httpStatus,
 		Message: mess,
 		Error:   err.Error(),
 	}
+	log.Debugf("message: %v", message)
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(message.Status)
 	json.NewEncoder(w).Encode(message)
+}
+
+func promptValidationErrors(err error, w http.ResponseWriter,
+	httpStatus int, mess string) {
+
+	log.Errorf(mess+": %v", err)
+
+	message := Message{
+		Status:          httpStatus,
+		Message:         mess,
+		ValidationError: errorsToSlice(err),
+	}
+
+	w.Header().Set("Content-type", "application/json")
+	w.WriteHeader(message.Status)
+	messageJSON, _ := json.Marshal(message)
+	w.Write(messageJSON)
+}
+
+func errorsToSlice(errs error) (arr []ErrorInvalidValue) {
+	keys := strings.Split(errs.Error(), "\n")
+	for _, key := range keys {
+		arr = append(arr, ErrorInvalidValue{
+			Key: key,
+		})
+	}
+	return
 }
 
 func (app *App) validateRemoteURL(w http.ResponseWriter, r *http.Request) {
@@ -168,6 +200,7 @@ func (app *App) validateRemoteURL(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	urlString := vars["url"]
 	if urlString == "" {
+		promptError(errors.New("Not found"), w, http.StatusNotFound, "URL error")
 		return
 	}
 
@@ -175,10 +208,17 @@ func (app *App) validateRemoteURL(w http.ResponseWriter, r *http.Request) {
 	pc, errParse, errConverting := app.parseRemoteURL(urlString)
 
 	if errConverting != nil {
+		log.Debugf("Error converting: %s", errConverting)
 		promptError(errConverting, w, http.StatusBadRequest, "Error converting")
 	}
 	if errParse != nil {
-		promptError(errParse, w, http.StatusUnprocessableEntity, "Error parsing")
+		if match, _ := regexp.MatchString(`404`, errParse.Error()); match {
+			log.Debugf("URL Error: %s", errParse)
+			promptError(errors.New("Not found"), w, http.StatusNotFound, "URL error")
+			return
+		}
+		log.Debugf("Validation Errors: %s", errParse)
+		promptValidationErrors(errParse, w, http.StatusUnprocessableEntity, "Validation Errors")
 	} else {
 		//set response CT based on client accept header
 		//and return respectively content
@@ -262,10 +302,12 @@ func (app *App) validate(w http.ResponseWriter, r *http.Request) {
 	pc, errParse, errConverting = app.parse(m)
 
 	if errConverting != nil {
+		log.Debugf("Error converting: %s", errConverting)
 		promptError(errConverting, w, http.StatusBadRequest, "Error converting")
 	}
 	if errParse != nil {
-		// log.Printf("Error parsing: %v", errParse)
+		log.Debugf("Validation Errors: %s", errParse)
+
 		// consider switch to promptError()
 		w.Header().Set("Content-type", "application/json")
 		w.WriteHeader(http.StatusUnprocessableEntity)
