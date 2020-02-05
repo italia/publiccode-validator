@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -50,18 +49,7 @@ func (app *App) init() {
 	app.Port = "5000"
 	app.DisableNetwork = false
 	app.Router = mux.NewRouter()
-	// app.initLogger()
 	app.initializeRouters()
-}
-
-func (app *App) initLogger() {
-	_, err := os.OpenFile("app.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// defer f.Close()
-	// log.SetOutput(f)
-	log.Info("Application logging started")
 }
 
 // Run http server
