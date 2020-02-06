@@ -196,16 +196,13 @@ func (app *App) validateRemoteURL(w http.ResponseWriter, r *http.Request) {
 	pc, errParse, errConverting := app.parseRemoteURL(urlString)
 
 	if errConverting != nil {
-		log.Debugf("Error converting: %s", errConverting)
 		promptError(errConverting, w, http.StatusBadRequest, "Error converting")
 	}
 	if errParse != nil {
 		if match, _ := regexp.MatchString(`404`, errParse.Error()); match {
-			log.Debugf("URL Error: %s", errParse)
 			promptError(errors.New("Not found"), w, http.StatusNotFound, "URL error")
 			return
 		}
-		log.Debugf("Validation Errors: %s", errParse)
 		promptValidationErrors(errParse, w, http.StatusUnprocessableEntity, "Validation Errors")
 	} else {
 		//set response CT based on client accept header
@@ -290,7 +287,6 @@ func (app *App) validate(w http.ResponseWriter, r *http.Request) {
 	pc, errParse, errConverting = app.parse(m)
 
 	if errConverting != nil {
-		log.Debugf("Error converting: %s", errConverting)
 		promptError(errConverting, w, http.StatusBadRequest, "Error converting")
 	}
 	if errParse != nil {
