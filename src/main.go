@@ -3,27 +3,31 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
-	"os"
+	"regexp"
 	"strconv"
+	"strings"
 
+	log "github.com/sirupsen/logrus"
 	yamlv2 "gopkg.in/yaml.v2"
 
+	vcsurl "github.com/alranel/go-vcsurl"
 	"github.com/ghodss/yaml"
 	"github.com/gorilla/mux"
 	publiccode "github.com/italia/publiccode-parser-go"
-	vcsurl "github.com/alranel/go-vcsurl"
 )
 
 //Message json type mapping, for test purpose
 type Message struct {
-	Status     string                `json:"status"`
-	Message    string                `json:"message"`
-	Publiccode publiccode.PublicCode `json:"pc"`
+	Status          int                    `json:"status"`
+	Message         string                 `json:"message"`
+	Publiccode      *publiccode.PublicCode `json:"pc,omitempty"`
+	Error           string                 `json:"error,omitempty"`
+	ValidationError []ErrorInvalidValue    `json:"validationErrors,omitempty"`
 }
 
 // App application main settings and export for tests
@@ -45,23 +49,12 @@ func (app *App) init() {
 	app.Port = "5000"
 	app.DisableNetwork = false
 	app.Router = mux.NewRouter()
-	// app.initLogger()
 	app.initializeRouters()
-}
-
-func (app *App) initLogger() {
-	f, err := os.OpenFile("app.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// defer f.Close()
-	log.SetOutput(f)
-	log.Println("Application logging started")
 }
 
 // Run http server
 func (app *App) Run() {
-	log.Printf("server is starting at port %s", app.Port)
+	log.Infof("server is starting at port %s", app.Port)
 	log.Fatal(http.ListenAndServe(":"+app.Port, app.Router))
 }
 
@@ -75,6 +68,11 @@ func (app *App) initializeRouters() {
 	app.Router.
 		HandleFunc("/pc/validate", app.validate).
 		Methods("POST", "OPTIONS")
+
+	app.Router.
+		HandleFunc("/pc/validateURL", app.validateRemoteURL).
+		Methods("POST", "OPTIONS").
+		Queries("url", "{url}")
 }
 
 // setupResponse set CORS header
@@ -95,7 +93,7 @@ func getURLFromYMLBuffer(in []byte) *url.URL {
 	if err == nil && url.Scheme != "" && url.Host != "" {
 		return url
 	}
-	log.Printf("mapping to url ko:\n%v\n", err)
+	log.Errorf("mapping to url ko:\n%v\n", err)
 	return nil
 }
 
@@ -119,7 +117,7 @@ func (app *App) parse(b []byte) ([]byte, error, error) {
 		p.DisableNetwork = app.DisableNetwork
 		p.RemoteBaseURL = getRawURL(url)
 	}
-	log.Printf("parse() called with disableNetwork: %v, and remoteBaseUrl: %s", p.DisableNetwork, p.RemoteBaseURL)
+	log.Debugf("parse() called with disableNetwork: %v, and remoteBaseUrl: %s", p.DisableNetwork, p.RemoteBaseURL)
 	errParse := p.Parse(b)
 	pc, err := p.ToYAML()
 
@@ -128,11 +126,103 @@ func (app *App) parse(b []byte) ([]byte, error, error) {
 	return pc, errParse, err
 }
 
+func (app *App) parseRemoteURL(urlString string) ([]byte, error, error) {
+	log.Infof("called parseRemoteURL() url: %s", urlString)
+	p := publiccode.NewParser()
+	errParse := p.ParseRemoteFile(urlString)
+	pc, err := p.ToYAML()
+
+	return pc, errParse, err
+}
+
+func promptError(err error, w http.ResponseWriter,
+	httpStatus int, mess string) {
+
+	log.Errorf(mess+": %v", err)
+
+	message := Message{
+		Status:  httpStatus,
+		Message: mess,
+		Error:   err.Error(),
+	}
+	log.Debugf("message: %v", message)
+	w.Header().Set("Content-type", "application/json")
+	w.WriteHeader(message.Status)
+	json.NewEncoder(w).Encode(message)
+}
+
+func promptValidationErrors(err error, w http.ResponseWriter,
+	httpStatus int, mess string) {
+
+	log.Errorf(mess+": %v", err)
+
+	message := Message{
+		Status:          httpStatus,
+		Message:         mess,
+		ValidationError: errorsToSlice(err),
+	}
+
+	w.Header().Set("Content-type", "application/json")
+	w.WriteHeader(message.Status)
+	messageJSON, _ := json.Marshal(message)
+	w.Write(messageJSON)
+}
+
+func errorsToSlice(errs error) (arr []ErrorInvalidValue) {
+	keys := strings.Split(errs.Error(), "\n")
+	for _, key := range keys {
+		arr = append(arr, ErrorInvalidValue{
+			Key: key,
+		})
+	}
+	return
+}
+
+func (app *App) validateRemoteURL(w http.ResponseWriter, r *http.Request) {
+	log.Info("called validateFromURL()")
+	setupResponse(&w, r)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
+	// Getting vars from parameters
+	vars := mux.Vars(r)
+	urlString := vars["url"]
+	if urlString == "" {
+		promptError(errors.New("Not found"), w, http.StatusNotFound, "URL error")
+		return
+	}
+
+	//parsing
+	pc, errParse, errConverting := app.parseRemoteURL(urlString)
+
+	if errConverting != nil {
+		promptError(errConverting, w, http.StatusBadRequest, "Error converting")
+	}
+	if errParse != nil {
+		if match, _ := regexp.MatchString(`404`, errParse.Error()); match {
+			promptError(errors.New("Not found"), w, http.StatusNotFound, "URL error")
+			return
+		}
+		promptValidationErrors(errParse, w, http.StatusUnprocessableEntity, "Validation Errors")
+	} else {
+		//set response CT based on client accept header
+		//and return respectively content
+		if r.Header.Get("Accept") == "application/json" {
+			w.Header().Set("Content-type", "application/json")
+			w.Write(yaml2json(pc))
+			return
+		}
+		//default choice
+		w.Header().Set("Content-type", "application/x-yaml")
+		w.Write(pc)
+	}
+}
+
 // validateParam will take a query parameter to enable
 // or disable network layer on parsing process
 // and then call normal validation
 func (app *App) validateParam(w http.ResponseWriter, r *http.Request) {
-	log.Print("called validateParam()")
+	log.Info("called validateParam()")
 	setupResponse(&w, r)
 	if (*r).Method == "OPTIONS" {
 		return
@@ -144,7 +234,7 @@ func (app *App) validateParam(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		app.DisableNetwork = false
-		log.Printf("var disableNetwork not set, default to true")
+		log.Info("var disableNetwork not set, default to true")
 	}
 
 	app.validate(w, r)
@@ -154,13 +244,14 @@ func (app *App) validateParam(w http.ResponseWriter, r *http.Request) {
 // to latest PublicCode version specs.
 // It accepts both format as input YML|JSON
 func (app *App) validate(w http.ResponseWriter, r *http.Request) {
-	log.Print("called validate()")
+	log.Info("called validate()")
 	setupResponse(&w, r)
 	if (*r).Method == "OPTIONS" {
 		return
 	}
 
 	if r.Body == nil {
+		log.Info("empty payload")
 		return
 	}
 
@@ -169,11 +260,7 @@ func (app *App) validate(w http.ResponseWriter, r *http.Request) {
 	//reading request
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Printf("Error reading body: %v", err)
-		mess := Message{Status: string(http.StatusBadRequest), Message: "can't read body"}
-		w.Header().Set("Content-type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(mess)
+		promptError(err, w, http.StatusBadRequest, "Error reading body")
 	}
 
 	// these functions take as argument a request body
@@ -188,11 +275,7 @@ func (app *App) validate(w http.ResponseWriter, r *http.Request) {
 		//converting to YML
 		m, err = yaml.JSONToYAML(body)
 		if err != nil {
-			log.Printf("Conversion to json ko:\n%v\n", err)
-			mess := Message{Status: string(http.StatusBadRequest), Message: "Conversion to json ko"}
-			w.Header().Set("Content-type", "application/json")
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(mess)
+			promptError(err, w, http.StatusBadRequest, "Conversion to json ko")
 		}
 	} else {
 		m = body
@@ -204,16 +287,18 @@ func (app *App) validate(w http.ResponseWriter, r *http.Request) {
 	pc, errParse, errConverting = app.parse(m)
 
 	if errConverting != nil {
-		log.Printf("Error converting: %v", errConverting)
+		promptError(errConverting, w, http.StatusBadRequest, "Error converting")
 	}
 	if errParse != nil {
-		// log.Printf("Error parsing: %v", errParse)
+		log.Debugf("Validation Errors: %s", errParse)
+
+		// consider switch to promptError()
 		w.Header().Set("Content-type", "application/json")
 		w.WriteHeader(http.StatusUnprocessableEntity)
 
 		json, _ := json.Marshal(errParse)
 		w.Write(json)
-		// json.NewEncoder(w).Encode(errParse)
+		// promptError(errParse, w, http.StatusUnprocessableEntity, "Error parsing")
 	} else {
 		//set response CT based on client accept header
 		//and return respectively content
@@ -232,7 +317,7 @@ func (app *App) validate(w http.ResponseWriter, r *http.Request) {
 func yaml2json(y []byte) []byte {
 	r, err := yaml.YAMLToJSON(y)
 	if err != nil {
-		log.Printf("Conversion to json ko:\n%v\n", err)
+		log.Errorf("Conversion to json ko:\n%v\n", err)
 	}
 	return r
 }

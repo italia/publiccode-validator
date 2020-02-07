@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -13,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -59,7 +59,8 @@ func TestValidationZeroPayload(t *testing.T) {
 	}
 }
 
-func TestValidationErrWithNoNetwork(t *testing.T) {
+func TestValidationErrWithNetwork(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
 	var errs []ErrorInvalidValue   //[]map[string]interface{}
 	var errOut []ErrorInvalidValue //[]map[string]interface{}
 
@@ -83,6 +84,7 @@ func TestValidationErrWithNoNetwork(t *testing.T) {
 	}
 	sort.Sort(Es(errs))
 	sort.Sort(Es(errOut))
+	log.Println(errs)
 	assert.Equal(t, errs, errOut)
 }
 
@@ -119,6 +121,61 @@ func TestValidationWithNetwork(t *testing.T) {
 	assert.Equal(t, string(out), response.Body.String())
 }
 
+func TestInvalidRemoteURL(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+	//url invalid
+	urlString := "https://raw.githubusercontent.com/italia/404-pc-web-validator/master/tests/invalid.yml"
+	req, _ := http.NewRequest("POST", "/pc/validateURL?url="+urlString, nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusNotFound, response.Code)
+	//url not present
+	urlString = ""
+	req, _ = http.NewRequest("POST", "/pc/validateURL?url="+urlString, nil)
+	response = executeRequest(req)
+	checkResponseCode(t, http.StatusNotFound, response.Code)
+
+	// invalid
+	out, err := ioutil.ReadFile("../tests/out_invalid_network.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+	urlString = "https://raw.githubusercontent.com/italia/pc-web-validator/master/tests/invalid.yml"
+	req, _ = http.NewRequest("POST", "/pc/validateURL?url="+urlString, nil)
+	response = executeRequest(req)
+	checkResponseCode(t, http.StatusUnprocessableEntity, response.Code)
+
+	var resMessage Message
+	json.Unmarshal(response.Body.Bytes(), &resMessage)
+	var outMessage Message
+	json.Unmarshal(out, &outMessage)
+
+	resOut := resMessage.ValidationError
+	localOut := outMessage.ValidationError
+
+	sort.Slice(resOut, func(i, j int) bool {
+		return resOut[i].Key < resOut[j].Key
+	})
+
+	sort.Slice(localOut, func(i, j int) bool {
+		return localOut[i].Key < localOut[j].Key
+	})
+	assert.Equal(t, localOut, resOut)
+}
+
+func TestValidationRemoteURL(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+	out, err := ioutil.ReadFile("../tests/out_valid.minimal.yml")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	urlString := "https://raw.githubusercontent.com/italia/pc-web-validator/master/tests/valid.minimal.yml"
+	req, _ := http.NewRequest("POST", "/pc/validateURL?url="+urlString, nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+	assert.Equal(t, string(out), response.Body.String())
+}
+
 // Utility functions to make mock request and check response
 func executeRequest(req *http.Request) *httptest.ResponseRecorder {
 	rr := httptest.NewRecorder()
@@ -126,6 +183,7 @@ func executeRequest(req *http.Request) *httptest.ResponseRecorder {
 
 	return rr
 }
+
 func checkResponseCode(t *testing.T, expected, actual int) {
 	if expected != actual {
 		t.Errorf("Expected response code %d. Got %d\n", expected, actual)
