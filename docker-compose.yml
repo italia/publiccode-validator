@@ -1,0 +1,12 @@
+version: '3.3'
+
+services:
+
+  devita_publiccode_validator:
+    image: italia/publiccode-validator
+    container_name: devita_publiccode_validator
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
