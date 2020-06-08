@@ -107,6 +107,20 @@ func getRawURL(url *url.URL) string {
 	return ""
 }
 
+// getRawFile returns a valid raw file for
+// major code hosting platforms
+func getRawFile(urlString string) string {
+	url, err := url.Parse(urlString)
+	if err != nil {
+		return urlString
+	}
+	rawURL := vcsurl.GetRawFile(url)
+	if rawURL != nil {
+		return rawURL.String()
+	}
+	return ""
+}
+
 // parse returns new parsed and validated buffer and errors if any
 func (app *App) parse(b []byte) ([]byte, error, error) {
 	url := getURLFromYMLBuffer(b)
@@ -129,7 +143,7 @@ func (app *App) parse(b []byte) ([]byte, error, error) {
 func (app *App) parseRemoteURL(urlString string) ([]byte, error, error) {
 	log.Infof("called parseRemoteURL() url: %s", urlString)
 	p := publiccode.NewParser()
-	errParse := p.ParseRemoteFile(urlString)
+	errParse := p.ParseRemoteFile(getRawFile(urlString))
 	pc, err := p.ToYAML()
 
 	return pc, errParse, err
