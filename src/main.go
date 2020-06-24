@@ -308,7 +308,7 @@ func (app *App) validate(w http.ResponseWriter, r *http.Request) {
 
 		// consider switch to promptError()
 		w.Header().Set("Content-type", "application/json")
-		w.WriteHeader(http.StatusUnprocessableEntity)
+		w.WriteHeader(http.StatusBadRequest)
 
 		json, _ := json.Marshal(errParse)
 		w.Write(json)
