@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"regexp"
 	"strconv"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 	yamlv2 "gopkg.in/yaml.v2"
@@ -171,25 +170,20 @@ func promptValidationErrors(err error, w http.ResponseWriter,
 	log.Errorf(mess+": %v", err)
 
 	message := Message{
-		Status:          httpStatus,
-		Message:         mess,
-		ValidationError: errorsToSlice(err),
+		Status:  httpStatus,
+		Message: mess,
+		ValidationError: []ErrorInvalidValue{
+			{
+				Key:    "YAML parse error",
+				Reason: "Invalid yaml file provided",
+			},
+		},
 	}
 
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(message.Status)
 	messageJSON, _ := json.Marshal(message)
 	w.Write(messageJSON)
-}
-
-func errorsToSlice(errs error) (arr []ErrorInvalidValue) {
-	keys := strings.Split(errs.Error(), "\n")
-	for _, key := range keys {
-		arr = append(arr, ErrorInvalidValue{
-			Key: key,
-		})
-	}
-	return
 }
 
 func (app *App) validateRemoteURL(w http.ResponseWriter, r *http.Request) {
