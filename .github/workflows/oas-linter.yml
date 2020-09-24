@@ -1,0 +1,25 @@
+# This is a basic workflow to help you get started with Actions
+
+name: OpenAPI
+
+on:
+  push:
+    branches:
+    - "*"
+  pull_request:
+    branches:
+    - "*"
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: API Guidelines linter - beta
+      uses: ioggstream/api-oas-checker-action@v0.6.4-italia
+      with:
+        # The pattern describing the file paths to lint with Spectral
+        file_glob: api_spec_oa3.yml
