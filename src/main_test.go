@@ -32,11 +32,11 @@ func TestMain(m *testing.M) {
 }
 
 func TestGitHub(t *testing.T) {
-	url, _ := url.Parse("https://github.com/sebbalex/pc-web-validator")
-	assert.Equal(t, getRawURL(url), "https://raw.githubusercontent.com/sebbalex/pc-web-validator/master/")
+	url, _ := url.Parse("https://github.com/italia/publiccode-validator")
+	assert.Equal(t, getRawURL(url), "https://raw.githubusercontent.com/italia/publiccode-validator/master/")
 
-	url, _ = url.Parse("https://github.com/sebbalex/pc-web-validator.git")
-	assert.Equal(t, getRawURL(url), "https://raw.githubusercontent.com/sebbalex/pc-web-validator/master/")
+	url, _ = url.Parse("https://github.com/italia/publiccode-validator.git")
+	assert.Equal(t, getRawURL(url), "https://raw.githubusercontent.com/italia/publiccode-validator/master/")
 }
 
 func TestConversion(t *testing.T) {
@@ -124,7 +124,7 @@ func TestValidationWithNetwork(t *testing.T) {
 func TestInvalidRemoteURL(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	//url invalid
-	urlString := "https://raw.githubusercontent.com/italia/404-pc-web-validator/master/tests/invalid.yml"
+	urlString := "https://raw.githubusercontent.com/italia/404-publiccode-validator/master/tests/invalid.yml"
 	req, _ := http.NewRequest("POST", "/pc/validateURL?url="+urlString, nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusNotFound, response.Code)
@@ -139,7 +139,7 @@ func TestInvalidRemoteURL(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	urlString = "https://raw.githubusercontent.com/italia/pc-web-validator/master/tests/invalid.yml"
+	urlString = "https://raw.githubusercontent.com/italia/publiccode-validator/master/tests/invalid.yml"
 	req, _ = http.NewRequest("POST", "/pc/validateURL?url="+urlString, nil)
 	response = executeRequest(req)
 	checkResponseCode(t, http.StatusUnprocessableEntity, response.Code)
@@ -169,7 +169,7 @@ func TestValidationRemoteURL(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	urlString := "https://raw.githubusercontent.com/italia/pc-web-validator/master/tests/valid.minimal.yml"
+	urlString := "https://raw.githubusercontent.com/italia/publiccode-validator/master/tests/valid.minimal.yml"
 	req, _ := http.NewRequest("POST", "/pc/validateURL?url="+urlString, nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
