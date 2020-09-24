@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: PC WEB VALIDATOR
   description: 'This is a Go web interface validator for publiccode.yml files, it uses publiccode-parser-go. `publiccode.yml` is an international standard for describing public software. It is expected to be published in the root of open source repositories. This parser performs syntactic and semantic validation according to the official spec.'
-  termsOfService: 'https://github.com/italia/pc-web-validator'
+  termsOfService: 'https://github.com/italia/publiccode-validator'
   x-api-id: 501E5354-2F69-4F0B-9BFB-6AA530430E84
   x-project: software
   contact:
@@ -11,7 +11,7 @@ info:
     url: 'https://developers.italia.it'
   license:
     name: BSD 3-Clause
-    url: 'https://github.com/sebbalex/pc-web-validator/blob/master/LICENSE'
+    url: 'https://github.com/italia/publiccode-validator/blob/master/LICENSE'
   version: 0.0.3
 externalDocs:
   description: Find out more about Developers Italia
