@@ -5,6 +5,8 @@ info:
   termsOfService: 'https://github.com/italia/publiccode-validator'
   x-api-id: 501E5354-2F69-4F0B-9BFB-6AA530430E84
   x-project: software
+  x-summary: 'Validate publiccode.yml files'
+
   contact:
     name: Developers Italia
     email: contatti@developers.italia.it
@@ -17,7 +19,7 @@ externalDocs:
   description: Find out more about Developers Italia
   url: 'https://developers.italia.it'
 servers:
-  - url: 'https://publiccode-editor-test.developers.italia.it/'
+  - url: 'https://publiccode-editor-test.developers.italia.it'
     description: Dev env
 tags:
   - name: public
@@ -28,6 +30,7 @@ tags:
 paths:
   /validateURL:
     post:
+      description: 'Validate a publiccode file in yaml or json format.'
       tags:
         - public
       summary: Validate a PublicCode by URL
