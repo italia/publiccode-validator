@@ -23,7 +23,7 @@ externalDocs:
   description: Find out more about Developers Italia
   url: https://developers.italia.it
 servers:
-  - url: https://publiccode-editor.developers.italia.it
+  - url: https://publiccode-validator.developers.italia.it/pc
     description: Dev env
 tags:
   - name: public
@@ -39,27 +39,15 @@ paths:
         - public
       summary: Validate a PublicCode by URL
       operationId: validateURL
-      requestBody:
-        description: Publiccode object that needs to be validated
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PublicCode'
-          application/x-yaml:
-            schema:
-              $ref: '#/components/schemas/PublicCode'
-        required: true
       parameters:
-        - name: disableNetwork
+        - name: url
           in: query
           schema:
-            type: boolean
+            type: string
             default: false
             example: false
           description: |-
-            By default this API resolves remote references and 
-            validate the existence of asset files like logos and
-            screenshots.
+            Remote URL which points to a publiccode.yml
       responses:
         '200':
           description: |-
