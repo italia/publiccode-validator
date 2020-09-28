@@ -24,7 +24,7 @@ externalDocs:
   url: https://developers.italia.it
 servers:
   - url: https://publiccode-validator.developers.italia.it/pc
-    description: Dev env
+    description: production environment
 tags:
   - name: public
     description: Everything about Publiccode
@@ -94,7 +94,8 @@ paths:
             screenshots.
       responses:
         '200':
-          description: 'Validation Ok, return latest valid publiccode version'
+          description: |-
+            Validation Ok, return latest valid publiccode version
           content:
             application/json:
               schema:
