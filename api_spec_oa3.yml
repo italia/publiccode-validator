@@ -1,35 +1,70 @@
 openapi: 3.0.1
 info:
   title: PC WEB VALIDATOR
-  description: This is a Go web interface validator for publiccode.yml files, it uses
-    publiccode-parser-go. `publiccode.yml` is an international standard for describing
-    public software. It is expected to be published in the root of open source repositories.
-    This parser performs syntactic and semantic validation according to the official
-    spec.
-  termsOfService: https://github.com/italia/pc-web-validator
+  description: |-
+    This is a Go web interface validator for publiccode.yml files, it uses publiccode-parser-go.
+    `publiccode.yml` is an international standard for describing public software.
+    It is expected to be published in the root of open source repositories.
+    This parser performs syntactic and semantic validation according to the official spec.
+  termsOfService: https://github.com/italia/publiccode-validator
   x-api-id: 501E5354-2F69-4F0B-9BFB-6AA530430E84
   x-project: software
+  x-summary: Validate publiccode.yml files
+
   contact:
     name: Developers Italia
     email: contatti@developers.italia.it
     url: https://developers.italia.it
   license:
     name: BSD 3-Clause
-    url: https://github.com/sebbalex/pc-web-validator/blob/master/LICENSE
-  version: 0.0.2
+    url: https://github.com/italia/publiccode-validator/blob/master/LICENSE
+  version: 0.0.3
 externalDocs:
   description: Find out more about Developers Italia
   url: https://developers.italia.it
 servers:
-  - url: https://publiccode-editor-test.developers.italia.it/
-    description: Dev env
+  - url: https://publiccode-validator.developers.italia.it/pc
+    description: production environment
 tags:
-- name: public
-  description: Everything about Publiccode
-  externalDocs:
-    description: Find out more
-    url: https://github.com/italia/publiccode.yml
+  - name: public
+    description: Everything about Publiccode
+    externalDocs:
+      description: Find out more
+      url: https://github.com/italia/publiccode.yml
 paths:
+  /validateURL:
+    post:
+      description: Validate a publiccode file in yaml or json format.
+      tags:
+        - public
+      summary: Validate a PublicCode by URL
+      operationId: validateURL
+      parameters:
+        - name: url
+          in: query
+          schema:
+            type: string
+            default: false
+            example: false
+          description: |-
+            Remote URL which points to a publiccode.yml
+      responses:
+        '200':
+          description: |-
+            Validation Ok, return latest valid publiccode version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Validation'
+            application/x-yaml:
+              schema:
+                $ref: '#/components/schemas/Validation'
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Validation'
   /validate:
     post:
       tags:
@@ -53,39 +88,50 @@ paths:
             type: boolean
             default: false
             example: false
-          description: |
+          description: |-
             By default this API resolves remote references and 
             validate the existence of asset files like logos and
             screenshots.
       responses:
-        200:
+        '200':
           description: |-
             Validation Ok, return latest valid publiccode version
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PublicCode'
+                $ref: '#/components/schemas/Validation'
             application/x-yaml:
               schema:
-                $ref: '#/components/schemas/PublicCode'
-        422:
+                $ref: '#/components/schemas/Validation'
+        '422':
           description: Validation failed
-          content: 
+          content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ValidationError'
+                $ref: '#/components/schemas/Validation'
 components:
   schemas:
     ValidationError:
       properties:
-        Key:
+        key:
           type: string
-        Reason:
+        reason:
           type: string
       required:
-        - Key
-        - Reason
+        - key
+    Validation:
+      properties:
+        status:
+          type: integer
+          format: int32
+        export:
+          $ref: '#/components/schemas/PublicCode'
+        validationErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+      required:
+        - status
+        - export
     PublicCode:
       $ref: https://raw.githubusercontent.com/italia/publiccode-editor/master/src/app/editor_generator_schema.json
