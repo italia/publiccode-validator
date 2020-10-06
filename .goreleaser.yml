@@ -1,0 +1,48 @@
+# This is an example goreleaser.yaml file with some sane defaults.
+# Make sure to check the documentation at http://goreleaser.com
+before:
+  hooks:
+    - go mod download
+builds:
+- 
+  id: publiccode-validator
+  binary: publiccode-validator
+  main: ./src
+  ldflags:
+    - -s -w -X main.version={{.Version}} -X main.date={{.Date}}
+  env:
+  - CGO_ENABLED=0
+  # https://github.com/italia/publiccode-parser-go/issues/50
+  ignore:
+  - goos: darwin
+    goarch: 386
+archives:
+- replacements:
+    darwin: Darwin
+    linux: Linux
+    windows: Windows
+    386: i386
+    amd64: x86_64
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
+dockers:
+  -
+    goos: linux
+    goarch: amd64
+    binaries:
+      - publiccode-validator
+    builds:
+      - publiccode-validator
+    skip_push: false
+    dockerfile: Dockerfile.goreleaser
+    image_templates:
+      - "italia/publiccode-validator:latest"
+      - "italia/publiccode-validator:{{ .Tag }}"
