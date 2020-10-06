@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"runtime/debug"
 	"strconv"
 	"strings"
 
@@ -38,6 +39,11 @@ type App struct {
 	DisableNetwork bool
 }
 
+var (
+	version string
+	date    string
+)
+
 // main server start
 func main() {
 	app := App{}
@@ -48,12 +54,22 @@ func main() {
 func (app *App) init() {
 	app.Port = "5000"
 	app.DisableNetwork = false
+	if version == "" {
+		version = "devel"
+		if info, ok := debug.ReadBuildInfo(); ok {
+			version = info.Main.Version
+		}
+	}
+	if date == "" {
+		date = "(latest)"
+	}
 	app.Router = mux.NewRouter()
 	app.initializeRouters()
 }
 
 // Run http server
 func (app *App) Run() {
+	log.Infof("version %s compiled %s\n", version, date)
 	log.Infof("server is starting at port %s", app.Port)
 	log.Fatal(http.ListenAndServe(":"+app.Port, app.Router))
 }
