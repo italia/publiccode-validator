@@ -1,0 +1,6 @@
+FROM alpine
+
+COPY publiccode-validator /
+
+# Run the compiled binary.
+CMD ["/publiccode-validator"]
