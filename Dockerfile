@@ -15,7 +15,7 @@ RUN apk add git
 RUN go get -d
 
 RUN go build -ldflags \
-    "-X main.version=$(git describe --abbrev=0 --tags) -X main.date=$(date +%Y-%m-%d)" \
+    "-X main.version=$(git describe --abbrev=0 --tags) -X main.date=$(date --iso-8601=second)" \
     -o $BIN \
     && chmod +x $BIN
 
