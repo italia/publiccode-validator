@@ -1,4 +1,4 @@
-module github.com/sebbalex/pc-web-validator
+module github.com/italia/publiccode-validator
 
 go 1.12
 

@@ -1,22 +1,16 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"regexp"
 	"runtime/debug"
 	"strconv"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
-	yamlv2 "gopkg.in/yaml.v2"
 
-	vcsurl "github.com/alranel/go-vcsurl"
 	"github.com/ghodss/yaml"
 	"github.com/gorilla/mux"
 	publiccode "github.com/italia/publiccode-parser-go"
@@ -89,6 +83,12 @@ func (app *App) initializeRouters() {
 		HandleFunc("/pc/validateURL", app.validateRemoteURL).
 		Methods("POST", "OPTIONS").
 		Queries("url", "{url}")
+
+	//v1
+	app.Router.
+		HandleFunc("/v1/validate", app.validatev1).
+		Methods("POST", "OPTIONS")
+
 }
 
 // setupResponse set CORS header
@@ -97,44 +97,6 @@ func setupResponse(w *http.ResponseWriter, req *http.Request) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-}
-
-// getURLFromYMLBuffer returns a valid URL string based on input object
-// takes valid URL as input
-func getURLFromYMLBuffer(in []byte) *url.URL {
-	var s map[interface{}]interface{}
-	yamlv2.NewDecoder(bytes.NewReader(in)).Decode(&s)
-	urlString := fmt.Sprintf("%v", s["url"])
-	url, err := url.Parse(urlString)
-	if err == nil && url.Scheme != "" && url.Host != "" {
-		return url
-	}
-	log.Errorf("mapping to url ko:\n%v\n", err)
-	return nil
-}
-
-// getRawURL returns a valid raw root repository based on
-// major code hosting platforms
-func getRawURL(url *url.URL) string {
-	rawURL := vcsurl.GetRawRoot(url)
-	if rawURL != nil {
-		return rawURL.String()
-	}
-	return ""
-}
-
-// getRawFile returns a valid raw file for
-// major code hosting platforms
-func getRawFile(urlString string) string {
-	url, err := url.Parse(urlString)
-	if err != nil {
-		return urlString
-	}
-	rawURL := vcsurl.GetRawFile(url)
-	if rawURL != nil {
-		return rawURL.String()
-	}
-	return ""
 }
 
 // parse returns new parsed and validated buffer and errors if any
@@ -196,16 +158,6 @@ func promptValidationErrors(err error, w http.ResponseWriter,
 	w.WriteHeader(message.Status)
 	messageJSON, _ := json.Marshal(message)
 	w.Write(messageJSON)
-}
-
-func errorsToSlice(errs error) (arr []ErrorInvalidValue) {
-	keys := strings.Split(errs.Error(), "\n")
-	for _, key := range keys {
-		arr = append(arr, ErrorInvalidValue{
-			Key: key,
-		})
-	}
-	return
 }
 
 func (app *App) validateRemoteURL(w http.ResponseWriter, r *http.Request) {
@@ -341,13 +293,4 @@ func (app *App) validate(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-type", "application/x-yaml")
 		w.Write(pc)
 	}
-}
-
-// yaml2json yaml to json conversion
-func yaml2json(y []byte) []byte {
-	r, err := yaml.YAMLToJSON(y)
-	if err != nil {
-		log.Errorf("Conversion to json ko:\n%v\n", err)
-	}
-	return r
 }
