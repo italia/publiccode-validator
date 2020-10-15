@@ -12,13 +12,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/italia/publiccode-validator/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
 var app App
 
-type Es []ErrorInvalidValue
+type Es []utils.ErrorInvalidValue
 
 func (a Es) Len() int           { return len(a) }
 func (a Es) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
@@ -26,28 +27,28 @@ func (a Es) Less(i, j int) bool { return a[i].Key < a[j].Key }
 
 func TestMain(m *testing.M) {
 	app = App{}
-	app.init()
+	app.initializeRouters()
 	code := m.Run()
 	os.Exit(code)
 }
 
 func TestGitHub(t *testing.T) {
 	url, _ := url.Parse("https://github.com/italia/publiccode-validator")
-	assert.Equal(t, getRawURL(url), "https://raw.githubusercontent.com/italia/publiccode-validator/master/")
+	assert.Equal(t, utils.GetRawURL(url), "https://raw.githubusercontent.com/italia/publiccode-validator/master/")
 
 	url, _ = url.Parse("https://github.com/italia/publiccode-validator.git")
-	assert.Equal(t, getRawURL(url), "https://raw.githubusercontent.com/italia/publiccode-validator/master/")
+	assert.Equal(t, utils.GetRawURL(url), "https://raw.githubusercontent.com/italia/publiccode-validator/master/")
 }
 
 func TestConversion(t *testing.T) {
-	fileYML, err := os.Open("../tests/valid.minimal.yml")   // For read access.
-	fileJSON, err := os.Open("../tests/valid.minimal.json") // For read access.
+	fileYML, err := os.Open("tests/valid.minimal.yml")   // For read access.
+	fileJSON, err := os.Open("tests/valid.minimal.json") // For read access.
 	if err != nil {
 		log.Fatal(err)
 	}
 	yml, err := ioutil.ReadAll(fileYML)
 	json, err := ioutil.ReadAll(fileJSON)
-	assert.Equal(t, string(yaml2json(yml)), strings.TrimSpace(string(json)))
+	assert.Equal(t, string(utils.Yaml2json(yml)), strings.TrimSpace(string(json)))
 }
 
 func TestValidationZeroPayload(t *testing.T) {
@@ -61,14 +62,14 @@ func TestValidationZeroPayload(t *testing.T) {
 
 func TestValidationErrWithNetwork(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	var errs []ErrorInvalidValue   //[]map[string]interface{}
-	var errOut []ErrorInvalidValue //[]map[string]interface{}
+	var errs []utils.ErrorInvalidValue   //[]map[string]interface{}
+	var errOut []utils.ErrorInvalidValue //[]map[string]interface{}
 
-	fileYML, err := os.Open("../tests/invalid.yml")
+	fileYML, err := os.Open("tests/invalid.yml")
 	if err != nil {
 		log.Fatal(err)
 	}
-	out, err := ioutil.ReadFile("../tests/out_invalid.json")
+	out, err := ioutil.ReadFile("tests/out_invalid.json")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -91,11 +92,11 @@ func TestValidationErrWithNetwork(t *testing.T) {
 func TestValidationWithNoNetwork(t *testing.T) {
 	checks := []bool{true, false}
 	for _, check := range checks {
-		fileYML, err := os.Open("../tests/valid.minimal.yml")
+		fileYML, err := os.Open("tests/valid.minimal.yml")
 		if err != nil {
 			log.Fatal(err)
 		}
-		out, err := ioutil.ReadFile("../tests/out_valid.minimal.yml")
+		out, err := ioutil.ReadFile("tests/out_valid.minimal.yml")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -107,11 +108,11 @@ func TestValidationWithNoNetwork(t *testing.T) {
 }
 
 func TestValidationWithNetwork(t *testing.T) {
-	fileYML, err := os.Open("../tests/valid.minimal.yml")
+	fileYML, err := os.Open("tests/valid.minimal.yml")
 	if err != nil {
 		log.Fatal(err)
 	}
-	out, err := ioutil.ReadFile("../tests/out_valid.minimal.yml")
+	out, err := ioutil.ReadFile("tests/out_valid.minimal.yml")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -135,7 +136,7 @@ func TestInvalidRemoteURL(t *testing.T) {
 	checkResponseCode(t, http.StatusNotFound, response.Code)
 
 	// invalid
-	out, err := ioutil.ReadFile("../tests/out_invalid_network.json")
+	out, err := ioutil.ReadFile("tests/out_invalid_network.json")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -144,9 +145,9 @@ func TestInvalidRemoteURL(t *testing.T) {
 	response = executeRequest(req)
 	checkResponseCode(t, http.StatusUnprocessableEntity, response.Code)
 
-	var resMessage Message
+	var resMessage utils.Message
 	json.Unmarshal(response.Body.Bytes(), &resMessage)
-	var outMessage Message
+	var outMessage utils.Message
 	json.Unmarshal(out, &outMessage)
 
 	resOut := resMessage.ValidationError
@@ -164,7 +165,7 @@ func TestInvalidRemoteURL(t *testing.T) {
 
 func TestValidationRemoteURL(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	out, err := ioutil.ReadFile("../tests/out_valid.minimal.yml")
+	out, err := ioutil.ReadFile("tests/out_valid.minimal.yml")
 	if err != nil {
 		log.Fatal(err)
 	}
