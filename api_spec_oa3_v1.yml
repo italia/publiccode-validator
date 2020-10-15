@@ -1,6 +1,6 @@
 openapi: 3.0.1
 info:
-  title: PC WEB VALIDATOR
+  title: Publiccode Validator API
   description: |-
     This is a Go web interface validator for publiccode.yml files, it uses publiccode-parser-go.
     `publiccode.yml` is an international standard for describing public software.
@@ -18,12 +18,12 @@ info:
   license:
     name: BSD 3-Clause
     url: https://github.com/italia/publiccode-validator/blob/master/LICENSE
-  version: 0.0.3
+  version: 1.0.0
 externalDocs:
   description: Find out more about Developers Italia
   url: https://developers.italia.it
 servers:
-  - url: https://publiccode-validator.developers.italia.it/pc
+  - url: https://publiccode-validator.developers.italia.it/v1
     description: production environment
 tags:
   - name: public
@@ -59,10 +59,22 @@ paths:
             application/x-yaml:
               schema:
                 $ref: '#/components/schemas/Validation'
+        '400':
+          description: Generic Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+            application/x-yaml:
+              schema:
+                $ref: '#/components/schemas/GenericError'
         '422':
           description: Validation failed
           content:
             application/json:
+              schema:
+                $ref: '#/components/schemas/Validation'
+            application/x-yaml:
               schema:
                 $ref: '#/components/schemas/Validation'
   /validate:
@@ -103,14 +115,40 @@ paths:
             application/x-yaml:
               schema:
                 $ref: '#/components/schemas/Validation'
+        '400':
+          description: Generic Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+            application/x-yaml:
+              schema:
+                $ref: '#/components/schemas/GenericError'
         '422':
           description: Validation failed
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Validation'
+            application/x-yaml:
+              schema:
+                $ref: '#/components/schemas/Validation'
 components:
   schemas:
+    GenericError:
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        status:
+          type: integer
+          format: int32
+          default: 400
+      required:
+        - error
+        - message
+        - status
     ValidationError:
       properties:
         key:
@@ -124,6 +162,10 @@ components:
         status:
           type: integer
           format: int32
+        message:
+          type: string
+        error:
+          type: string
         export:
           $ref: '#/components/schemas/PublicCode'
         validationErrors:
@@ -132,6 +174,8 @@ components:
             $ref: '#/components/schemas/ValidationError'
       required:
         - status
-        - export
+        - message
+        - error
+        - validationErrors
     PublicCode:
       $ref: https://raw.githubusercontent.com/italia/publiccode-editor/master/src/app/editor_generator_schema.json

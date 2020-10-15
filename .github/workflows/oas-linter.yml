@@ -22,4 +22,4 @@ jobs:
       uses: ioggstream/api-oas-checker-action@v0.6.4-italia
       with:
         # The pattern describing the file paths to lint with Spectral
-        file_glob: api_spec_oa3.yml
+        file_glob: api_spec_oa3_v1.yml

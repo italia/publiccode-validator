@@ -177,6 +177,133 @@ func TestValidationRemoteURL(t *testing.T) {
 	assert.Equal(t, string(out), response.Body.String())
 }
 
+// API v1
+func TestValidationZeroPayloadv1(t *testing.T) {
+	req, _ := http.NewRequest("POST", "/api/v1/validate?disableNetwork=true", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+	if body := response.Body.String(); body != "" {
+		t.Errorf("Expected an message. Got %s", body)
+	}
+}
+
+func TestValidationErrWithNetworkv1(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+	var errs []utils.ErrorInvalidValue   //[]map[string]interface{}
+	var errOut []utils.ErrorInvalidValue //[]map[string]interface{}
+
+	fileYML, err := os.Open("tests/invalid.yml")
+	if err != nil {
+		log.Fatal(err)
+	}
+	out, err := ioutil.ReadFile("tests/out_invalid.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+	req, _ := http.NewRequest("POST", "/api/v1/validate?disableNetwork=false", fileYML)
+	response := executeRequest(req)
+	err = json.Unmarshal(out, &errOut)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = json.Unmarshal(response.Body.Bytes(), &errs)
+	if err != nil {
+		log.Fatal(err)
+	}
+	sort.Sort(Es(errs))
+	sort.Sort(Es(errOut))
+	log.Println(errs)
+	assert.Equal(t, errs, errOut)
+}
+
+func TestValidationWithNoNetworkv1(t *testing.T) {
+	checks := []bool{true, false}
+	for _, check := range checks {
+		fileYML, err := os.Open("tests/valid.minimal.yml")
+		if err != nil {
+			log.Fatal(err)
+		}
+		out, err := ioutil.ReadFile("tests/out_valid.minimal.yml")
+		if err != nil {
+			log.Fatal(err)
+		}
+		req, _ := http.NewRequest("POST", "/api/v1/validate?disableNetwork="+strconv.FormatBool(check), fileYML)
+		response := executeRequest(req)
+		checkResponseCode(t, http.StatusOK, response.Code)
+		assert.Equal(t, string(out), response.Body.String())
+	}
+}
+
+func TestValidationWithNetworkv1(t *testing.T) {
+	fileYML, err := os.Open("tests/valid.minimal.yml")
+	if err != nil {
+		log.Fatal(err)
+	}
+	out, err := ioutil.ReadFile("tests/out_valid.minimal.yml")
+	if err != nil {
+		log.Fatal(err)
+	}
+	req, _ := http.NewRequest("POST", "/api/v1/validate", fileYML)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+	assert.Equal(t, string(out), response.Body.String())
+}
+
+func TestInvalidRemoteURLv1(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+	//url invalid
+	urlString := "https://raw.githubusercontent.com/italia/404-publiccode-validator/master/tests/invalid.yml"
+	req, _ := http.NewRequest("POST", "/api/v1/validateURL?url="+urlString, nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusNotFound, response.Code)
+	//url not present
+	urlString = ""
+	req, _ = http.NewRequest("POST", "/api/v1/validateURL?url="+urlString, nil)
+	response = executeRequest(req)
+	checkResponseCode(t, http.StatusNotFound, response.Code)
+
+	// invalid
+	out, err := ioutil.ReadFile("tests/out_invalid_network.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+	urlString = "https://raw.githubusercontent.com/italia/publiccode-validator/master/tests/invalid.yml"
+	req, _ = http.NewRequest("POST", "/api/v1/validateURL?url="+urlString, nil)
+	response = executeRequest(req)
+	checkResponseCode(t, http.StatusUnprocessableEntity, response.Code)
+
+	var resMessage utils.Message
+	json.Unmarshal(response.Body.Bytes(), &resMessage)
+	var outMessage utils.Message
+	json.Unmarshal(out, &outMessage)
+
+	resOut := resMessage.ValidationError
+	localOut := outMessage.ValidationError
+
+	sort.Slice(resOut, func(i, j int) bool {
+		return resOut[i].Key < resOut[j].Key
+	})
+
+	sort.Slice(localOut, func(i, j int) bool {
+		return localOut[i].Key < localOut[j].Key
+	})
+	assert.Equal(t, localOut, resOut)
+}
+
+func TestValidationRemoteURLv1(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+	out, err := ioutil.ReadFile("tests/out_valid.minimal.yml")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	urlString := "https://raw.githubusercontent.com/italia/publiccode-validator/master/tests/valid.minimal.yml"
+	req, _ := http.NewRequest("POST", "/api/v1/validateURL?url="+urlString, nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusOK, response.Code)
+	assert.Equal(t, string(out), response.Body.String())
+}
+
 // Utility functions to make mock request and check response
 func executeRequest(req *http.Request) *httptest.ResponseRecorder {
 	rr := httptest.NewRecorder()

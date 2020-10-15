@@ -1,4 +1,4 @@
-package main
+package apiv1
 
 import (
 	"encoding/json"
@@ -6,94 +6,20 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
-	"runtime/debug"
 	"strconv"
-
-	log "github.com/sirupsen/logrus"
 
 	"github.com/ghodss/yaml"
 	"github.com/gorilla/mux"
-	publiccode "github.com/italia/publiccode-parser-go"
-	"github.com/italia/publiccode-validator/apiv1"
+	"github.com/italia/publiccode-parser-go"
 	"github.com/italia/publiccode-validator/utils"
+	log "github.com/sirupsen/logrus"
 )
 
-var (
-	version string
-	date    string
-)
-
-// App localize type
-type App utils.App
-
-func init() {
-	if version == "" {
-		version = "devel"
-		if info, ok := debug.ReadBuildInfo(); ok {
-			version = info.Main.Version
-		}
-	}
-	if date == "" {
-		date = "(latest)"
-	}
-	log.Infof("version %s compiled %s\n", version, date)
-}
-
-// main server start
-func main() {
-	app := App{}
-	app.Port = "5000"
-	app.DisableNetwork = false
-	app.initializeRouters()
-
-	// server run here because of tests
-	// https://github.com/gorilla/mux#testing-handlers
-	log.Infof("server is starting at port %s", app.Port)
-	log.Fatal(http.ListenAndServe(":"+app.Port, app.Router))
-}
-
-func (app *App) initializeRouters() {
-	app.Router = mux.NewRouter()
-	var api = app.Router.PathPrefix("/api").Subrouter()
-	var api1 = api.PathPrefix("/v1").Subrouter()
-
-	// v0
-	app.Router.
-		HandleFunc("/pc/validate", app.validateParam).
-		Methods("POST", "OPTIONS").
-		Queries("disableNetwork", "{disableNetwork}")
-
-	app.Router.
-		HandleFunc("/pc/validate", app.validate).
-		Methods("POST", "OPTIONS")
-
-	app.Router.
-		HandleFunc("/pc/validateURL", app.validateRemoteURL).
-		Methods("POST", "OPTIONS").
-		Queries("url", "{url}")
-
-	// v1
-	api1.
-		HandleFunc("/validate", apiv1.ValidateParam).
-		Methods("POST", "OPTIONS").
-		Queries("disableNetwork", "{disableNetwork}")
-
-	api1.
-		HandleFunc("/validate", apiv1.Validate).
-		Methods("POST", "OPTIONS")
-
-	api1.
-		HandleFunc("/validateURL", apiv1.ValidateRemoteURL).
-		Methods("POST", "OPTIONS").
-		Queries("url", "{url}")
-}
+var app utils.App
 
 // parse returns new parsed and validated buffer and errors if any
-func (app *App) parse(b []byte) ([]byte, error, error) {
-	url, err := utils.GetURLFromYMLBuffer(b)
-	if err != nil {
-		return nil, nil, err
-	}
+func parse(b []byte) ([]byte, error, error) {
+	url := utils.GetURLFromYMLBuffer(b)
 	p := publiccode.NewParser()
 	p.DisableNetwork = app.DisableNetwork
 
@@ -110,14 +36,10 @@ func (app *App) parse(b []byte) ([]byte, error, error) {
 	return pc, errParse, err
 }
 
-func (app *App) parseRemoteURL(urlString string) ([]byte, error, error) {
+func parseRemoteURL(urlString string) ([]byte, error, error) {
 	log.Infof("called parseRemoteURL() url: %s", urlString)
 	p := publiccode.NewParser()
-	urlString, err := utils.GetRawFile(urlString)
-	if err != nil {
-		return nil, nil, err
-	}
-	errParse := p.ParseRemoteFile(urlString)
+	errParse := p.ParseRemoteFile(utils.GetRawFile(urlString))
 	pc, err := p.ToYAML()
 
 	return pc, errParse, err
@@ -156,7 +78,8 @@ func promptValidationErrors(err error, w http.ResponseWriter,
 	w.Write(messageJSON)
 }
 
-func (app *App) validateRemoteURL(w http.ResponseWriter, r *http.Request) {
+// ValidateRemoteURL validate remote URL
+func ValidateRemoteURL(w http.ResponseWriter, r *http.Request) {
 	log.Info("called validateFromURL()")
 	utils.SetupResponse(&w, r)
 	if (*r).Method == "OPTIONS" {
@@ -171,7 +94,7 @@ func (app *App) validateRemoteURL(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// parsing
-	pc, errParse, errConverting := app.parseRemoteURL(urlString)
+	pc, errParse, errConverting := parseRemoteURL(urlString)
 
 	if errConverting != nil {
 		promptError(errConverting, w, http.StatusBadRequest, "Error converting")
@@ -196,10 +119,10 @@ func (app *App) validateRemoteURL(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// validateParam will take a query parameter to enable
+// ValidateParam will take a query parameter to enable
 // or disable network layer on parsing process
 // and then call normal validation
-func (app *App) validateParam(w http.ResponseWriter, r *http.Request) {
+func ValidateParam(w http.ResponseWriter, r *http.Request) {
 	log.Info("called validateParam()")
 	utils.SetupResponse(&w, r)
 	if (*r).Method == "OPTIONS" {
@@ -215,13 +138,13 @@ func (app *App) validateParam(w http.ResponseWriter, r *http.Request) {
 		log.Info("var disableNetwork not set, default to true")
 	}
 
-	app.validate(w, r)
+	Validate(w, r)
 }
 
-// validate returns a YML or JSON onbject validated and upgraded
+// Validate returns a YML or JSON onbject validated and upgraded
 // to latest PublicCode version specs.
 // It accepts both format as input YML|JSON
-func (app *App) validate(w http.ResponseWriter, r *http.Request) {
+func Validate(w http.ResponseWriter, r *http.Request) {
 	log.Info("called validate()")
 	utils.SetupResponse(&w, r)
 	if (*r).Method == "OPTIONS" {
@@ -262,7 +185,7 @@ func (app *App) validate(w http.ResponseWriter, r *http.Request) {
 	// parsing
 	var pc []byte
 	var errParse, errConverting error
-	pc, errParse, errConverting = app.parse(m)
+	pc, errParse, errConverting = parse(m)
 
 	if errConverting != nil {
 		promptError(errConverting, w, http.StatusBadRequest, "Error converting")
