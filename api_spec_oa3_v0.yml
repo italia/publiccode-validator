@@ -23,7 +23,7 @@ externalDocs:
   description: Find out more about Developers Italia
   url: https://developers.italia.it
 servers:
-  - url: https://publiccode-validator.developers.italia.it/v0
+  - url: https://publiccode-validator.developers.italia.it/pc
     description: production environment
 tags:
   - name: public
@@ -113,12 +113,12 @@ components:
   schemas:
     ValidationError:
       properties:
-        key:
+        Key:
           type: string
-        reason:
+        Reason:
           type: string
       required:
-        - key
+        - Key
     Validation:
       properties:
         status:

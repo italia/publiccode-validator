@@ -25,4 +25,4 @@ jobs:
       run: go build -o publiccode-validator
 
     - name: Test
-      run: go test -race
+      run: go test -race ./...

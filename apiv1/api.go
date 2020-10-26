@@ -1,11 +1,11 @@
 package apiv1
 
 import (
-	"encoding/json"
+	json "encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
-	"regexp"
 	"strconv"
 
 	"github.com/ghodss/yaml"
@@ -19,12 +19,14 @@ var app utils.App
 
 // parse returns new parsed and validated buffer and errors if any
 func parse(b []byte) ([]byte, error, error) {
-	url := utils.GetURLFromYMLBuffer(b)
+	url, err := utils.GetURLFromYMLBuffer(b)
+	if err != nil {
+		return nil, nil, err
+	}
 	p := publiccode.NewParser()
 	p.DisableNetwork = app.DisableNetwork
 
 	if url != nil {
-		p.DisableNetwork = app.DisableNetwork
 		p.RemoteBaseURL = utils.GetRawURL(url)
 	}
 	log.Debugf("parse() called with disableNetwork: %v, and remoteBaseUrl: %s", p.DisableNetwork, p.RemoteBaseURL)
@@ -39,43 +41,67 @@ func parse(b []byte) ([]byte, error, error) {
 func parseRemoteURL(urlString string) ([]byte, error, error) {
 	log.Infof("called parseRemoteURL() url: %s", urlString)
 	p := publiccode.NewParser()
-	errParse := p.ParseRemoteFile(utils.GetRawFile(urlString))
+	urlString, err := utils.GetRawFile(urlString)
+	if err != nil {
+		return nil, nil, err
+	}
+	errParse := p.ParseRemoteFile(urlString)
 	pc, err := p.ToYAML()
 
 	return pc, errParse, err
 }
 
-func promptError(err error, w http.ResponseWriter,
-	httpStatus int, mess string) {
-
-	log.Errorf(mess+": %v", err)
-
-	message := utils.Message{
-		Status:  httpStatus,
-		Message: mess,
-		Error:   err.Error(),
-	}
-	log.Debugf("message: %v", message)
-	w.Header().Set("Content-type", "application/json")
-	w.WriteHeader(message.Status)
-	json.NewEncoder(w).Encode(message)
+func errorsToValidationErrors(err error) (out []utils.ErrorInvalidValue) {
+	j, _ := json.Marshal(err)
+	_ = json.Unmarshal(j, &out)
+	return
 }
 
-func promptValidationErrors(err error, w http.ResponseWriter,
+func promptError(err error, w http.ResponseWriter, acceptHeader string,
 	httpStatus int, mess string) {
-
-	log.Errorf(mess+": %v", err)
 
 	message := utils.Message{
 		Status:          httpStatus,
 		Message:         mess,
-		ValidationError: utils.ErrorsToSlice(err),
+		ValidationError: errorsToValidationErrors(err),
+	}
+	if message.ValidationError == nil {
+		message.Error = err.Error()
 	}
 
-	w.Header().Set("Content-type", "application/json")
+	log.Debugf("promptError message: %v", message)
+	w.Header().Set("Content-type", acceptHeader)
 	w.WriteHeader(message.Status)
-	messageJSON, _ := json.Marshal(message)
-	w.Write(messageJSON)
+
+	if acceptHeader == "application/json" {
+		o, _ := json.Marshal(message)
+		w.Write(o)
+	} else {
+		o, _ := yaml.Marshal(message)
+		w.Write(o)
+	}
+}
+
+func elaborate(pc []byte, errParse error, errConverting error, w http.ResponseWriter, acceptHeader string) {
+	if errConverting != nil {
+		promptError(errConverting, w, acceptHeader, http.StatusBadRequest, "Error converting")
+		return
+	}
+	if errParse != nil {
+		promptError(errParse, w, acceptHeader, http.StatusUnprocessableEntity, "Validation Errors")
+		return
+	}
+
+	// set response CT based on client accept header
+	// and return respectively content
+	if acceptHeader == "application/json" {
+		w.Header().Set("Content-type", "application/json")
+		w.Write(utils.Yaml2json(pc))
+		return
+	}
+	// default choice
+	w.Header().Set("Content-type", "application/x-yaml")
+	w.Write(pc)
 }
 
 // ValidateRemoteURL validate remote URL
@@ -88,35 +114,20 @@ func ValidateRemoteURL(w http.ResponseWriter, r *http.Request) {
 	// Getting vars from parameters
 	vars := mux.Vars(r)
 	urlString := vars["url"]
+
+	acceptHeader := "application/x-yaml"
+	if r.Header.Get("Accept") != "*/*" {
+		acceptHeader = r.Header.Get("Accept")
+	}
 	if urlString == "" {
-		promptError(errors.New("Not found"), w, http.StatusNotFound, "URL error")
+		promptError(errors.New("URL not found"), w, acceptHeader, http.StatusNotFound, "URL error")
 		return
 	}
 
 	// parsing
 	pc, errParse, errConverting := parseRemoteURL(urlString)
 
-	if errConverting != nil {
-		promptError(errConverting, w, http.StatusBadRequest, "Error converting")
-	}
-	if errParse != nil {
-		if match, _ := regexp.MatchString(`404`, errParse.Error()); match {
-			promptError(errors.New("Not found"), w, http.StatusNotFound, "URL error")
-			return
-		}
-		promptValidationErrors(errParse, w, http.StatusUnprocessableEntity, "Validation Errors")
-	} else {
-		// set response CT based on client accept header
-		// and return respectively content
-		if r.Header.Get("Accept") == "application/json" {
-			w.Header().Set("Content-type", "application/json")
-			w.Write(utils.Yaml2json(pc))
-			return
-		}
-		// default choice
-		w.Header().Set("Content-type", "application/x-yaml")
-		w.Write(pc)
-	}
+	elaborate(pc, errParse, errConverting, w, acceptHeader)
 }
 
 // ValidateParam will take a query parameter to enable
@@ -141,18 +152,23 @@ func ValidateParam(w http.ResponseWriter, r *http.Request) {
 	Validate(w, r)
 }
 
-// Validate returns a YML or JSON onbject validated and upgraded
+// Validate returns a YML or JSON object validated and upgraded
 // to latest PublicCode version specs.
 // It accepts both format as input YML|JSON
 func Validate(w http.ResponseWriter, r *http.Request) {
-	log.Info("called validate()")
+	log.Info("/api/v1/validate")
 	utils.SetupResponse(&w, r)
 	if (*r).Method == "OPTIONS" {
 		return
 	}
 
+	acceptHeader := "application/x-yaml"
+	if r.Header.Get("Accept") != "*/*" {
+		acceptHeader = r.Header.Get("Accept")
+	}
+
 	if r.Body == nil {
-		log.Info("empty payload")
+		promptError(fmt.Errorf("empty payload"), w, acceptHeader, http.StatusBadRequest, "Empty payload")
 		return
 	}
 
@@ -160,8 +176,14 @@ func Validate(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	// reading request
 	body, err := ioutil.ReadAll(r.Body)
+
 	if err != nil {
-		promptError(err, w, http.StatusBadRequest, "Error reading body")
+		promptError(err, w, acceptHeader, http.StatusBadRequest, "Error reading body")
+	}
+
+	if len(body) == 0 {
+		promptError(fmt.Errorf("empty payload"), w, acceptHeader, http.StatusBadRequest, "Empty payload")
+		return
 	}
 
 	// these functions take as argument a request body
@@ -170,46 +192,11 @@ func Validate(w http.ResponseWriter, r *http.Request) {
 	// to validate correctly
 	// here, based on content-type header must convert
 	// [yaml/json] content into []byte
-	var m []byte
-
-	if r.Header.Get("Content-Type") == "application/json" {
-		//converting to YML
-		m, err = yaml.JSONToYAML(body)
-		if err != nil {
-			promptError(err, w, http.StatusBadRequest, "Conversion to json ko")
-		}
-	} else {
-		m = body
-	}
 
 	// parsing
 	var pc []byte
 	var errParse, errConverting error
-	pc, errParse, errConverting = parse(m)
+	pc, errParse, errConverting = parse(body)
 
-	if errConverting != nil {
-		promptError(errConverting, w, http.StatusBadRequest, "Error converting")
-	}
-	if errParse != nil {
-		log.Debugf("Validation Errors: %s", errParse)
-
-		// consider switch to promptError()
-		w.Header().Set("Content-type", "application/json")
-		w.WriteHeader(http.StatusUnprocessableEntity)
-
-		json, _ := json.Marshal(errParse)
-		w.Write(json)
-		// promptError(errParse, w, http.StatusUnprocessableEntity, "Error parsing")
-	} else {
-		// set response CT based on client accept header
-		// and return respectively content
-		if r.Header.Get("Accept") == "application/json" {
-			w.Header().Set("Content-type", "application/json")
-			w.Write(utils.Yaml2json(pc))
-			return
-		}
-		// default choice
-		w.Header().Set("Content-type", "application/x-yaml")
-		w.Write(pc)
-	}
+	elaborate(pc, errParse, errConverting, w, acceptHeader)
 }

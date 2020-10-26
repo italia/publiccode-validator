@@ -19,6 +19,14 @@ import (
 
 var app App
 
+type Msg utils.Message
+
+func (msg Msg) Len() int { return len(msg.ValidationError) }
+func (msg Msg) Swap(i, j int) {
+	msg.ValidationError[i], msg.ValidationError[j] = msg.ValidationError[j], msg.ValidationError[i]
+}
+func (msg Msg) Less(i, j int) bool { return msg.ValidationError[i].Key < msg.ValidationError[j].Key }
+
 type Es []utils.ErrorInvalidValue
 
 func (a Es) Len() int           { return len(a) }
@@ -123,12 +131,12 @@ func TestValidationWithNetwork(t *testing.T) {
 }
 
 func TestInvalidRemoteURL(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 	//url invalid
 	urlString := "https://raw.githubusercontent.com/italia/404-publiccode-validator/master/tests/invalid.yml"
 	req, _ := http.NewRequest("POST", "/pc/validateURL?url="+urlString, nil)
 	response := executeRequest(req)
-	checkResponseCode(t, http.StatusNotFound, response.Code)
+	checkResponseCode(t, http.StatusBadRequest, response.Code)
 	//url not present
 	urlString = ""
 	req, _ = http.NewRequest("POST", "/pc/validateURL?url="+urlString, nil)
@@ -178,40 +186,81 @@ func TestValidationRemoteURL(t *testing.T) {
 }
 
 // API v1
-func TestValidationZeroPayloadv1(t *testing.T) {
-	req, _ := http.NewRequest("POST", "/api/v1/validate?disableNetwork=true", nil)
-	response := executeRequest(req)
-	checkResponseCode(t, http.StatusOK, response.Code)
-	if body := response.Body.String(); body != "" {
-		t.Errorf("Expected an message. Got %s", body)
+func TestEmptyPayloadv1(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+	out, err := ioutil.ReadFile("tests/out_empty_payload.yml")
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	req, _ := http.NewRequest("POST", "/api/v1/validate", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusBadRequest, response.Code)
+	assert.Equal(t, string(out), response.Body.String())
+
+	out, err = ioutil.ReadFile("tests/out_empty_payload.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	req, _ = http.NewRequest("POST", "/api/v1/validate", nil)
+	req.Header.Set("Accept", "application/json")
+	response = executeRequest(req)
+	checkResponseCode(t, http.StatusBadRequest, response.Code)
+	assert.Equal(t, string(out), response.Body.String())
+}
+func TestEmptyURLv1(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+	out, err := ioutil.ReadFile("tests/out_empty_url.yml")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	req, _ := http.NewRequest("POST", "/api/v1/validateURL?url=", nil)
+	response := executeRequest(req)
+	checkResponseCode(t, http.StatusNotFound, response.Code)
+	assert.Equal(t, string(out), response.Body.String())
+
+	out, err = ioutil.ReadFile("tests/out_empty_url.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	req, _ = http.NewRequest("POST", "/api/v1/validateURL?url=", nil)
+	req.Header.Set("Accept", "application/json")
+	response = executeRequest(req)
+	checkResponseCode(t, http.StatusNotFound, response.Code)
+	assert.Equal(t, string(out), response.Body.String())
 }
 
 func TestValidationErrWithNetworkv1(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
-	var errs []utils.ErrorInvalidValue   //[]map[string]interface{}
-	var errOut []utils.ErrorInvalidValue //[]map[string]interface{}
+	log.SetLevel(log.InfoLevel)
+	var errs utils.Message   //[]map[string]interface{}
+	var errOut utils.Message //[]map[string]interface{}
 
 	fileYML, err := os.Open("tests/invalid.yml")
 	if err != nil {
 		log.Fatal(err)
 	}
-	out, err := ioutil.ReadFile("tests/out_invalid.json")
+	out, err := ioutil.ReadFile("tests/out_invalid_v1.json")
 	if err != nil {
 		log.Fatal(err)
 	}
 	req, _ := http.NewRequest("POST", "/api/v1/validate?disableNetwork=false", fileYML)
+	req.Header.Set("Accept", "application/json")
 	response := executeRequest(req)
+
 	err = json.Unmarshal(out, &errOut)
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Info(response.Body.String())
 	err = json.Unmarshal(response.Body.Bytes(), &errs)
 	if err != nil {
 		log.Fatal(err)
 	}
-	sort.Sort(Es(errs))
-	sort.Sort(Es(errOut))
+	sort.Sort(Msg(errs))
+	sort.Sort(Msg(errOut))
 	log.Println(errs)
 	assert.Equal(t, errs, errOut)
 }
@@ -250,12 +299,12 @@ func TestValidationWithNetworkv1(t *testing.T) {
 }
 
 func TestInvalidRemoteURLv1(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 	//url invalid
 	urlString := "https://raw.githubusercontent.com/italia/404-publiccode-validator/master/tests/invalid.yml"
 	req, _ := http.NewRequest("POST", "/api/v1/validateURL?url="+urlString, nil)
 	response := executeRequest(req)
-	checkResponseCode(t, http.StatusNotFound, response.Code)
+	checkResponseCode(t, http.StatusBadRequest, response.Code)
 	//url not present
 	urlString = ""
 	req, _ = http.NewRequest("POST", "/api/v1/validateURL?url="+urlString, nil)
@@ -263,19 +312,25 @@ func TestInvalidRemoteURLv1(t *testing.T) {
 	checkResponseCode(t, http.StatusNotFound, response.Code)
 
 	// invalid
-	out, err := ioutil.ReadFile("tests/out_invalid_network.json")
+	out, err := ioutil.ReadFile("tests/out_invalid_network_v1.json")
 	if err != nil {
 		log.Fatal(err)
 	}
 	urlString = "https://raw.githubusercontent.com/italia/publiccode-validator/master/tests/invalid.yml"
 	req, _ = http.NewRequest("POST", "/api/v1/validateURL?url="+urlString, nil)
+	req.Header.Set("Accept", "application/json")
 	response = executeRequest(req)
 	checkResponseCode(t, http.StatusUnprocessableEntity, response.Code)
 
 	var resMessage utils.Message
-	json.Unmarshal(response.Body.Bytes(), &resMessage)
+	err = json.Unmarshal(response.Body.Bytes(), &resMessage)
+	if err != nil {
+		log.Fatal(err)
+	}
 	var outMessage utils.Message
 	json.Unmarshal(out, &outMessage)
+
+	log.Info(response.Body.String())
 
 	resOut := resMessage.ValidationError
 	localOut := outMessage.ValidationError
