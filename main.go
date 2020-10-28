@@ -1,59 +1,32 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"regexp"
 	"runtime/debug"
 	"strconv"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
-	yamlv2 "gopkg.in/yaml.v2"
 
-	vcsurl "github.com/alranel/go-vcsurl"
 	"github.com/ghodss/yaml"
 	"github.com/gorilla/mux"
 	publiccode "github.com/italia/publiccode-parser-go"
+	"github.com/italia/publiccode-validator/apiv1"
+	"github.com/italia/publiccode-validator/utils"
 )
-
-//Message json type mapping, for test purpose
-type Message struct {
-	Status          int                    `json:"status"`
-	Message         string                 `json:"message"`
-	Publiccode      *publiccode.PublicCode `json:"pc,omitempty"`
-	Error           string                 `json:"error,omitempty"`
-	ValidationError []ErrorInvalidValue    `json:"validationErrors,omitempty"`
-}
-
-// App application main settings and export for tests
-type App struct {
-	Router         *mux.Router
-	Port           string
-	Debug          bool
-	DisableNetwork bool
-}
 
 var (
 	version string
 	date    string
 )
 
-// main server start
-func main() {
-	app := App{}
-	app.init()
-	app.Run()
-}
+// App localize type
+type App utils.App
 
-func (app *App) init() {
-	app.Port = "5000"
-	app.DisableNetwork = false
+func init() {
 	if version == "" {
 		version = "devel"
 		if info, ok := debug.ReadBuildInfo(); ok {
@@ -63,19 +36,28 @@ func (app *App) init() {
 	if date == "" {
 		date = "(latest)"
 	}
-	app.Router = mux.NewRouter()
-	app.initializeRouters()
+	log.Infof("version %s compiled %s\n", version, date)
 }
 
-// Run http server
-func (app *App) Run() {
-	log.Infof("version %s compiled %s\n", version, date)
+// main server start
+func main() {
+	app := App{}
+	app.Port = "5000"
+	app.DisableNetwork = false
+	app.initializeRouters()
+
+	// server run here because of tests
+	// https://github.com/gorilla/mux#testing-handlers
 	log.Infof("server is starting at port %s", app.Port)
 	log.Fatal(http.ListenAndServe(":"+app.Port, app.Router))
 }
 
 func (app *App) initializeRouters() {
-	//init router
+	app.Router = mux.NewRouter()
+	var api = app.Router.PathPrefix("/api").Subrouter()
+	var api1 = api.PathPrefix("/v1").Subrouter()
+
+	// v0
 	app.Router.
 		HandleFunc("/pc/validate", app.validateParam).
 		Methods("POST", "OPTIONS").
@@ -89,63 +71,35 @@ func (app *App) initializeRouters() {
 		HandleFunc("/pc/validateURL", app.validateRemoteURL).
 		Methods("POST", "OPTIONS").
 		Queries("url", "{url}")
-}
 
-// setupResponse set CORS header
-func setupResponse(w *http.ResponseWriter, req *http.Request) {
-	//cors mode
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-}
+	// v1
+	api1.
+		HandleFunc("/validate", apiv1.ValidateParam).
+		Methods("POST", "OPTIONS").
+		Queries("disableNetwork", "{disableNetwork}")
 
-// getURLFromYMLBuffer returns a valid URL string based on input object
-// takes valid URL as input
-func getURLFromYMLBuffer(in []byte) *url.URL {
-	var s map[interface{}]interface{}
-	yamlv2.NewDecoder(bytes.NewReader(in)).Decode(&s)
-	urlString := fmt.Sprintf("%v", s["url"])
-	url, err := url.Parse(urlString)
-	if err == nil && url.Scheme != "" && url.Host != "" {
-		return url
-	}
-	log.Errorf("mapping to url ko:\n%v\n", err)
-	return nil
-}
+	api1.
+		HandleFunc("/validate", apiv1.Validate).
+		Methods("POST", "OPTIONS")
 
-// getRawURL returns a valid raw root repository based on
-// major code hosting platforms
-func getRawURL(url *url.URL) string {
-	rawURL := vcsurl.GetRawRoot(url)
-	if rawURL != nil {
-		return rawURL.String()
-	}
-	return ""
-}
-
-// getRawFile returns a valid raw file for
-// major code hosting platforms
-func getRawFile(urlString string) string {
-	url, err := url.Parse(urlString)
-	if err != nil {
-		return urlString
-	}
-	rawURL := vcsurl.GetRawFile(url)
-	if rawURL != nil {
-		return rawURL.String()
-	}
-	return ""
+	api1.
+		HandleFunc("/validateURL", apiv1.ValidateRemoteURL).
+		Methods("POST", "OPTIONS").
+		Queries("url", "{url}")
 }
 
 // parse returns new parsed and validated buffer and errors if any
 func (app *App) parse(b []byte) ([]byte, error, error) {
-	url := getURLFromYMLBuffer(b)
+	url, err := utils.GetURLFromYMLBuffer(b)
+	if err != nil {
+		return nil, nil, err
+	}
 	p := publiccode.NewParser()
 	p.DisableNetwork = app.DisableNetwork
 
 	if url != nil {
 		p.DisableNetwork = app.DisableNetwork
-		p.RemoteBaseURL = getRawURL(url)
+		p.RemoteBaseURL = utils.GetRawURL(url)
 	}
 	log.Debugf("parse() called with disableNetwork: %v, and remoteBaseUrl: %s", p.DisableNetwork, p.RemoteBaseURL)
 	errParse := p.Parse(b)
@@ -159,7 +113,11 @@ func (app *App) parse(b []byte) ([]byte, error, error) {
 func (app *App) parseRemoteURL(urlString string) ([]byte, error, error) {
 	log.Infof("called parseRemoteURL() url: %s", urlString)
 	p := publiccode.NewParser()
-	errParse := p.ParseRemoteFile(getRawFile(urlString))
+	urlString, err := utils.GetRawFile(urlString)
+	if err != nil {
+		return nil, nil, err
+	}
+	errParse := p.ParseRemoteFile(urlString)
 	pc, err := p.ToYAML()
 
 	return pc, errParse, err
@@ -170,7 +128,7 @@ func promptError(err error, w http.ResponseWriter,
 
 	log.Errorf(mess+": %v", err)
 
-	message := Message{
+	message := utils.Message{
 		Status:  httpStatus,
 		Message: mess,
 		Error:   err.Error(),
@@ -186,10 +144,10 @@ func promptValidationErrors(err error, w http.ResponseWriter,
 
 	log.Errorf(mess+": %v", err)
 
-	message := Message{
+	message := utils.Message{
 		Status:          httpStatus,
 		Message:         mess,
-		ValidationError: errorsToSlice(err),
+		ValidationError: utils.ErrorsToSlice(err),
 	}
 
 	w.Header().Set("Content-type", "application/json")
@@ -198,19 +156,9 @@ func promptValidationErrors(err error, w http.ResponseWriter,
 	w.Write(messageJSON)
 }
 
-func errorsToSlice(errs error) (arr []ErrorInvalidValue) {
-	keys := strings.Split(errs.Error(), "\n")
-	for _, key := range keys {
-		arr = append(arr, ErrorInvalidValue{
-			Key: key,
-		})
-	}
-	return
-}
-
 func (app *App) validateRemoteURL(w http.ResponseWriter, r *http.Request) {
 	log.Info("called validateFromURL()")
-	setupResponse(&w, r)
+	utils.SetupResponse(&w, r)
 	if (*r).Method == "OPTIONS" {
 		return
 	}
@@ -222,7 +170,7 @@ func (app *App) validateRemoteURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//parsing
+	// parsing
 	pc, errParse, errConverting := app.parseRemoteURL(urlString)
 
 	if errConverting != nil {
@@ -235,14 +183,14 @@ func (app *App) validateRemoteURL(w http.ResponseWriter, r *http.Request) {
 		}
 		promptValidationErrors(errParse, w, http.StatusUnprocessableEntity, "Validation Errors")
 	} else {
-		//set response CT based on client accept header
-		//and return respectively content
+		// set response CT based on client accept header
+		// and return respectively content
 		if r.Header.Get("Accept") == "application/json" {
 			w.Header().Set("Content-type", "application/json")
-			w.Write(yaml2json(pc))
+			w.Write(utils.Yaml2json(pc))
 			return
 		}
-		//default choice
+		// default choice
 		w.Header().Set("Content-type", "application/x-yaml")
 		w.Write(pc)
 	}
@@ -253,7 +201,7 @@ func (app *App) validateRemoteURL(w http.ResponseWriter, r *http.Request) {
 // and then call normal validation
 func (app *App) validateParam(w http.ResponseWriter, r *http.Request) {
 	log.Info("called validateParam()")
-	setupResponse(&w, r)
+	utils.SetupResponse(&w, r)
 	if (*r).Method == "OPTIONS" {
 		return
 	}
@@ -275,7 +223,7 @@ func (app *App) validateParam(w http.ResponseWriter, r *http.Request) {
 // It accepts both format as input YML|JSON
 func (app *App) validate(w http.ResponseWriter, r *http.Request) {
 	log.Info("called validate()")
-	setupResponse(&w, r)
+	utils.SetupResponse(&w, r)
 	if (*r).Method == "OPTIONS" {
 		return
 	}
@@ -285,9 +233,9 @@ func (app *App) validate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//Closing body after operations
+	// Closing body after operations
 	defer r.Body.Close()
-	//reading request
+	// reading request
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		promptError(err, w, http.StatusBadRequest, "Error reading body")
@@ -311,7 +259,7 @@ func (app *App) validate(w http.ResponseWriter, r *http.Request) {
 		m = body
 	}
 
-	//parsing
+	// parsing
 	var pc []byte
 	var errParse, errConverting error
 	pc, errParse, errConverting = app.parse(m)
@@ -330,24 +278,15 @@ func (app *App) validate(w http.ResponseWriter, r *http.Request) {
 		w.Write(json)
 		// promptError(errParse, w, http.StatusUnprocessableEntity, "Error parsing")
 	} else {
-		//set response CT based on client accept header
-		//and return respectively content
+		// set response CT based on client accept header
+		// and return respectively content
 		if r.Header.Get("Accept") == "application/json" {
 			w.Header().Set("Content-type", "application/json")
-			w.Write(yaml2json(pc))
+			w.Write(utils.Yaml2json(pc))
 			return
 		}
-		//default choice
+		// default choice
 		w.Header().Set("Content-type", "application/x-yaml")
 		w.Write(pc)
 	}
-}
-
-// yaml2json yaml to json conversion
-func yaml2json(y []byte) []byte {
-	r, err := yaml.YAMLToJSON(y)
-	if err != nil {
-		log.Errorf("Conversion to json ko:\n%v\n", err)
-	}
-	return r
 }

@@ -18,7 +18,7 @@ info:
   license:
     name: BSD 3-Clause
     url: https://github.com/italia/publiccode-validator/blob/master/LICENSE
-  version: 0.0.3
+  version: 0.0.4
 externalDocs:
   description: Find out more about Developers Italia
   url: https://developers.italia.it
@@ -113,12 +113,12 @@ components:
   schemas:
     ValidationError:
       properties:
-        key:
+        Key:
           type: string
-        reason:
+        Reason:
           type: string
       required:
-        - key
+        - Key
     Validation:
       properties:
         status:

@@ -1,0 +1,181 @@
+openapi: 3.0.1
+info:
+  title: Publiccode Validator API
+  description: |-
+    This is a Go web interface validator for publiccode.yml files, it uses publiccode-parser-go.
+    `publiccode.yml` is an international standard for describing public software.
+    It is expected to be published in the root of open source repositories.
+    This parser performs syntactic and semantic validation according to the official spec.
+  termsOfService: https://github.com/italia/publiccode-validator
+  x-api-id: 501E5354-2F69-4F0B-9BFB-6AA530430E84
+  x-project: software
+  x-summary: Validate publiccode.yml files
+
+  contact:
+    name: Developers Italia
+    email: contatti@developers.italia.it
+    url: https://developers.italia.it
+  license:
+    name: BSD 3-Clause
+    url: https://github.com/italia/publiccode-validator/blob/master/LICENSE
+  version: 1.0.0
+externalDocs:
+  description: Find out more about Developers Italia
+  url: https://developers.italia.it
+servers:
+  - url: https://publiccode-validator.developers.italia.it/api/v1
+    description: production environment
+tags:
+  - name: public
+    description: Everything about Publiccode
+    externalDocs:
+      description: Find out more
+      url: https://github.com/italia/publiccode.yml
+paths:
+  /validateURL:
+    post:
+      description: Validate a publiccode file in yaml or json format.
+      tags:
+        - public
+      summary: Validate a PublicCode by URL
+      operationId: validateURL
+      parameters:
+        - name: url
+          in: query
+          schema:
+            type: string
+            default: false
+            example: false
+          description: |-
+            Remote URL which points to a publiccode.yml
+      responses:
+        '200':
+          description: |-
+            Validation Ok, return latest valid publiccode version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Validation'
+            application/x-yaml:
+              schema:
+                $ref: '#/components/schemas/Validation'
+        '400':
+          description: Generic Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+            application/x-yaml:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Validation'
+            application/x-yaml:
+              schema:
+                $ref: '#/components/schemas/Validation'
+  /validate:
+    post:
+      tags:
+        - public
+      summary: Validate a PublicCode
+      operationId: validate
+      requestBody:
+        description: Publiccode object that needs to be validated
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicCode'
+          application/x-yaml:
+            schema:
+              $ref: '#/components/schemas/PublicCode'
+        required: true
+      parameters:
+        - name: disableNetwork
+          in: query
+          schema:
+            type: boolean
+            default: false
+            example: false
+          description: |-
+            By default this API resolves remote references and 
+            validate the existence of asset files like logos and
+            screenshots.
+      responses:
+        '200':
+          description: |-
+            Validation Ok, return latest valid publiccode version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Validation'
+            application/x-yaml:
+              schema:
+                $ref: '#/components/schemas/Validation'
+        '400':
+          description: Generic Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+            application/x-yaml:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Validation'
+            application/x-yaml:
+              schema:
+                $ref: '#/components/schemas/Validation'
+components:
+  schemas:
+    GenericError:
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        status:
+          type: integer
+          format: int32
+          default: 400
+      required:
+        - error
+        - message
+        - status
+    ValidationError:
+      properties:
+        Key:
+          type: string
+        Reason:
+          type: string
+      required:
+        - Key
+    Validation:
+      properties:
+        status:
+          type: integer
+          format: int32
+        message:
+          type: string
+        error:
+          type: string
+        export:
+          $ref: '#/components/schemas/PublicCode'
+        validationErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+      required:
+        - status
+        - message
+        - error
+        - validationErrors
+    PublicCode:
+      $ref: https://raw.githubusercontent.com/italia/publiccode-editor/master/src/app/editor_generator_schema.json

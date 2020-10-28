@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 
 // ErrorInvalidKey represents an error caused by an invalid key.
 type ErrorInvalidKey struct {
-	Key string
+	Key string `json:"Key"`
 }
 
 func (e ErrorInvalidKey) Error() string {
@@ -16,8 +16,8 @@ func (e ErrorInvalidKey) Error() string {
 
 // ErrorInvalidValue represents an error caused by an invalid value.
 type ErrorInvalidValue struct {
-	Key    string
-	Reason string
+	Key    string `json:"Key"`
+	Reason string `json:"Reason"`
 }
 
 func (e ErrorInvalidValue) Error() string {

@@ -6,7 +6,7 @@ builds:
 - 
   id: publiccode-validator
   binary: publiccode-validator
-  main: ./src
+  main: main.go
   ldflags:
     - -s -w -X main.version={{.Version}} -X main.date={{.Date}}
   env:

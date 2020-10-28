@@ -7,7 +7,7 @@ ENV BIN /usr/local/bin/publiccode-validator
 
 WORKDIR /go/src
 
-COPY ./src/ .
+COPY ./ .
 COPY .git/ .
 
 RUN apk add git

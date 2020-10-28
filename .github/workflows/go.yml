@@ -15,14 +15,14 @@ jobs:
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
       with:
-        go-version: ^1.13
+        go-version: ^1.15
       id: go
 
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
 
     - name: Build
-      run: go build -o publiccode-validator -v ./src
+      run: go build -o publiccode-validator
 
     - name: Test
-      run: go test -v ./src
+      run: go test -race ./...
