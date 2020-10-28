@@ -21,7 +21,10 @@ var app utils.App
 func parse(b []byte) ([]byte, error, error) {
 	url, err := utils.GetURLFromYMLBuffer(b)
 	if err != nil {
-		return nil, nil, err
+		// this error should not be blocking because it just means
+		// that no url is inside the request body.
+		// one case for that: partial validation during editing
+		log.Warnf("url not found in body (useful to get RemoteBaseURL): %s", err)
 	}
 	p := publiccode.NewParser()
 	p.DisableNetwork = app.DisableNetwork
@@ -194,9 +197,7 @@ func Validate(w http.ResponseWriter, r *http.Request) {
 	// [yaml/json] content into []byte
 
 	// parsing
-	var pc []byte
-	var errParse, errConverting error
-	pc, errParse, errConverting = parse(body)
+	pc, errParse, errConverting := parse(body)
 
 	elaborate(pc, errParse, errConverting, w, acceptHeader)
 }

@@ -92,7 +92,10 @@ func (app *App) initializeRouters() {
 func (app *App) parse(b []byte) ([]byte, error, error) {
 	url, err := utils.GetURLFromYMLBuffer(b)
 	if err != nil {
-		return nil, nil, err
+		// this error should not be blocking because it just means
+		// that no url is inside the request body.
+		// one case for that: partial validation during editing
+		log.Warnf("url not found in body (useful to get RemoteBaseURL): %s", err)
 	}
 	p := publiccode.NewParser()
 	p.DisableNetwork = app.DisableNetwork
@@ -175,6 +178,7 @@ func (app *App) validateRemoteURL(w http.ResponseWriter, r *http.Request) {
 
 	if errConverting != nil {
 		promptError(errConverting, w, http.StatusBadRequest, "Error converting")
+		return
 	}
 	if errParse != nil {
 		if match, _ := regexp.MatchString(`404`, errParse.Error()); match {
@@ -239,6 +243,7 @@ func (app *App) validate(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		promptError(err, w, http.StatusBadRequest, "Error reading body")
+		return
 	}
 
 	// these functions take as argument a request body
@@ -254,18 +259,18 @@ func (app *App) validate(w http.ResponseWriter, r *http.Request) {
 		m, err = yaml.JSONToYAML(body)
 		if err != nil {
 			promptError(err, w, http.StatusBadRequest, "Conversion to json ko")
+			return
 		}
 	} else {
 		m = body
 	}
 
 	// parsing
-	var pc []byte
-	var errParse, errConverting error
-	pc, errParse, errConverting = app.parse(m)
+	pc, errParse, errConverting := app.parse(m)
 
 	if errConverting != nil {
 		promptError(errConverting, w, http.StatusBadRequest, "Error converting")
+		return
 	}
 	if errParse != nil {
 		log.Debugf("Validation Errors: %s", errParse)
