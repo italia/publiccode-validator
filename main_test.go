@@ -235,8 +235,8 @@ func TestEmptyURLv1(t *testing.T) {
 
 func TestValidationErrWithNetworkv1(t *testing.T) {
 	log.SetLevel(log.InfoLevel)
-	var errs utils.Message   //[]map[string]interface{}
-	var errOut utils.Message //[]map[string]interface{}
+	var errs utils.Message
+	var errOut utils.Message
 
 	fileYML, err := os.Open("tests/invalid.yml")
 	if err != nil {
