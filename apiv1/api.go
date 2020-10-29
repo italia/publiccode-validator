@@ -54,19 +54,13 @@ func parseRemoteURL(urlString string) ([]byte, error, error) {
 	return pc, errParse, err
 }
 
-func errorsToValidationErrors(err error) (out []utils.ErrorInvalidValue) {
-	j, _ := json.Marshal(err)
-	_ = json.Unmarshal(j, &out)
-	return
-}
-
 func promptError(err error, w http.ResponseWriter, acceptHeader string,
 	httpStatus int, mess string) {
 
 	message := utils.Message{
 		Status:          httpStatus,
 		Message:         mess,
-		ValidationError: errorsToValidationErrors(err),
+		ValidationError: utils.ErrorsToValidationErrors(err),
 	}
 	if message.ValidationError == nil {
 		message.Error = err.Error()
