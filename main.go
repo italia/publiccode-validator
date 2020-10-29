@@ -150,7 +150,7 @@ func promptValidationErrors(err error, w http.ResponseWriter,
 	message := utils.Message{
 		Status:          httpStatus,
 		Message:         mess,
-		ValidationError: utils.ErrorsToSlice(err),
+		ValidationError: utils.ErrorsToValidationErrors(err),
 	}
 
 	w.Header().Set("Content-type", "application/json")

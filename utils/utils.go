@@ -2,11 +2,11 @@ package utils
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 
 	vcsurl "github.com/alranel/go-vcsurl"
 	"github.com/ghodss/yaml"
@@ -78,14 +78,10 @@ func GetRawFile(urlString string) (string, error) {
 	return "", errors.New("URL is not valid or response http code is not success either")
 }
 
-// ErrorsToSlice return a slice of errors
-func ErrorsToSlice(errs error) (arr []ErrorInvalidValue) {
-	keys := strings.Split(errs.Error(), "\n")
-	for _, key := range keys {
-		arr = append(arr, ErrorInvalidValue{
-			Key: key,
-		})
-	}
+// ErrorsToValidationErrors converts validation errors
+func ErrorsToValidationErrors(err error) (out []ErrorInvalidValue) {
+	j, _ := json.Marshal(err)
+	_ = json.Unmarshal(j, &out)
 	return
 }
 
