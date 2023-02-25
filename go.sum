@@ -11,7 +11,6 @@ github.com/deadcheat/goblet v1.3.1 h1:OPOYQjHlbPmG8fFCt8GNNGECLVhaJ0n7F7cP5Mh7G/
 github.com/deadcheat/goblet v1.3.1/go.mod h1:IrMNyAwyrVgB30HsND2WgleTUM4wHTS9m40yNY6NJQg=
 github.com/deadcheat/gonch v0.0.0-20180528124129-c2ff7a019863 h1:WiIagMEsLYiZCeD76SSLTJPdBdnmXkrFOFbI6Chf0xg=
 github.com/deadcheat/gonch v0.0.0-20180528124129-c2ff7a019863/go.mod h1:/5mH3gAuXUxGN3maOBAxBfB8RXvP9tBIX5fx2x1k0V0=
-github.com/dyatlov/go-oembed v0.0.0-20180429203341-4bc5ab7a42e9 h1:cdw1dgA549x0tZR5zM5bjobQXFFShOsozUbzWZgmd30=
 github.com/dyatlov/go-oembed v0.0.0-20180429203341-4bc5ab7a42e9/go.mod h1:3XylPVY2YGcV9RQBie0DspVncA1nsgsYQ8BtIs52fz4=
 github.com/dyatlov/go-oembed v0.0.0-20191103150536-a57c85b3b37c h1:MEV1LrQtCBGacXajlT4CSuYWbZuLl/qaZVqwoOmwAbU=
 github.com/dyatlov/go-oembed v0.0.0-20191103150536-a57c85b3b37c/go.mod h1:DjlDZiZGRRKbiJZmiEiiXozsBQAQzHmxwHKFeXifL2g=
@@ -22,7 +21,6 @@ github.com/golang/mock v1.1.1/go.mod h1:oTYuIxOrZwtPieC+H1uAHpcLFnEyAGVDL/k47Jfb
 github.com/golang/mock v1.3.1/go.mod h1:sBzyDLLjw3U8JLTeZvSv8jJB+tU5PVekmnlKIyFUx0Y=
 github.com/gorilla/mux v1.7.3 h1:gnP5JzjVOuiZD07fKKToCAOjS0yOpj/qPETTXCCS6hw=
 github.com/gorilla/mux v1.7.3/go.mod h1:1lud6UwP+6orDFRuTfBEV8e9/aOM/c4fVVCaMa2zaAs=
-github.com/italia/httpclient-lib-go v0.0.0-20201009133728-9044482688d7 h1:jxY6N3KOTkhCrRN/Yj6+5nwBA0OR9O11918AV7PwEG8=
 github.com/italia/httpclient-lib-go v0.0.0-20201009133728-9044482688d7/go.mod h1:tO13wT41NVbqsP9MFBMulFqeC6zFdwuLNXi29lx/FiM=
 github.com/italia/httpclient-lib-go v0.0.1 h1:wxbmNmeHO4fM3+Z6p86WnjTK6B8+Zk2VMij0T1HcZYU=
 github.com/italia/httpclient-lib-go v0.0.1/go.mod h1:tO13wT41NVbqsP9MFBMulFqeC6zFdwuLNXi29lx/FiM=
@@ -42,11 +40,9 @@ github.com/sirupsen/logrus v1.7.0/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.2.0/go.mod h1:qt09Ya8vawLte6SNmTgCsAVtYtaKzEcn8ATUoHMkEqE=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
-github.com/stretchr/testify v1.3.0 h1:TivCn/peBQ7UY8ooIcPgZFpTNSz0Q2U6UrFlUfqbe0Q=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
 github.com/stretchr/testify v1.4.0 h1:2E4SXV/wtOkTonXsotYi4li6zVWxYlZuYNCXe9XRJyk=
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
-github.com/thoas/go-funk v0.4.0 h1:KBaa5NL7NMtsFlQaD8nQMbDt1wuM+OOaNQyYNYQFhVo=
 github.com/thoas/go-funk v0.4.0/go.mod h1:mlR+dHGb+4YgXkf13rkQTuzrneeHANxOm6+ZnEV9HsA=
 github.com/thoas/go-funk v0.7.0 h1:GmirKrs6j6zJbhJIficOsz2aAI7700KsU/5YrdHRM1Y=
 github.com/thoas/go-funk v0.7.0/go.mod h1:+IWnUfUmFO1+WVYQWQtIJHeRRdaIyyYglZN7xzUPe4Q=
@@ -60,12 +56,10 @@ golang.org/x/net v0.0.0-20190311183353-d8887717615a/go.mod h1:t9HGtf8HONx5eT2rtn
 golang.org/x/sync v0.0.0-20190423024810-112230192c58/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20191026070338-33540a1f6037/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
-golang.org/x/sys v0.0.0-20201009025420-dfb3f7c4e634 h1:bNEHhJCnrwMKNMmOx3yAynp5vs5/gRy+XWFtZFu7NBM=
 golang.org/x/sys v0.0.0-20201009025420-dfb3f7c4e634/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
-golang.org/x/sys v0.0.0-20201029080932-201ba4db2418 h1:HlFl4V6pEMziuLXyRkm5BIYq1y1GAbb02pRlWvI54OM=
-golang.org/x/sys v0.0.0-20201029080932-201ba4db2418/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.1.0 h1:kunALQeHf1/185U1i0GOB/fy1IPRDDpuoOOqRReG57U=
+golang.org/x/sys v0.1.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
-golang.org/x/text v0.3.2 h1:tW2bmiBqwgJj/UpqtC8EpXEZVYOwU0yG4iWbprSVAcs=
 golang.org/x/text v0.3.2/go.mod h1:bEr9sfX3Q8Zfm5fL9x+3itogRgK3+ptLWKqgva+5dAk=
 golang.org/x/text v0.3.4 h1:0YWbFKbhXG/wIiuHDSKpS0Iy7FSA+u45VtBMfQcFTTc=
 golang.org/x/text v0.3.4/go.mod h1:5Zoc/QRtKVWzQhOtBMvqHzDpF6irO9z98xDceosuGiQ=
